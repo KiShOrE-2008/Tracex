@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #0f131f;
+  --color-surface: #0f131f;
+  --color-surface-container-lowest: #0a0e1a;
+  --color-surface-container-low: #171b28;
+  --color-surface-container: #1b1f2c;
+  --color-surface-container-high: #262a37;
+  --color-surface-container-highest: #303442;
+  --color-surface-variant: #303442;
+  --color-surface-bright: #353946;
+  --color-surface-tint: #36d9ed;
+
+  --color-primary: #6dedff;
+  --color-primary-container: #28d2e6;
+  --color-primary-fixed: #95f1ff;
+  --color-primary-fixed-dim: #36d9ed;
+  --color-on-primary: #00363d;
+  --color-on-primary-container: #005660;
+
+  --color-secondary: #b4c5ff;
+  --color-secondary-container: #0053da;
+  --color-on-secondary-container: #cdd7ff;
+  --color-secondary-fixed-dim: #b4c5ff;
+
+  --color-tertiary: #e7d3ff;
+  --color-tertiary-container: #d0b1ff;
+  --color-on-tertiary-container: #6620bd;
+  --color-tertiary-fixed-dim: #d6baff;
+
+  --color-on-background: #dfe2f4;
+  --color-on-surface: #dfe2f4;
+  --color-on-surface-variant: #bbc9cc;
+  --color-outline: #859396;
+  --color-outline-variant: #3c494b;
+
+  --color-error: #ffb4ab;
+  --color-error-container: #93000a;
+  --color-on-error: #690005;
+
+  --font-body-sm: 'Inter', sans-serif;
+  --font-body-md: 'Inter', sans-serif;
+  --font-headline-sm: 'Inter', sans-serif;
+  --font-headline-md: 'Inter', sans-serif;
+  --font-display-lg: 'Inter', sans-serif;
+  --font-label-caps: 'Inter', sans-serif;
+  --font-code-sm: 'JetBrains Mono', monospace;
+  --font-title-lg: 'Inter', sans-serif;
+}
+
+@layer utilities {
+  .font-body-sm { font-family: var(--font-body-sm); font-size: 13px; line-height: 18px; font-weight: 400; }
+  .font-body-md { font-family: var(--font-body-md); font-size: 14px; line-height: 20px; font-weight: 400; }
+  .font-headline-sm { font-family: var(--font-headline-sm); font-size: 20px; line-height: 28px; font-weight: 600; }
+  .font-headline-md { font-family: var(--font-headline-md); font-size: 24px; line-height: 32px; font-weight: 600; }
+  .font-display-lg { font-family: var(--font-display-lg); font-size: 32px; line-height: 40px; letter-spacing: -0.02em; font-weight: 700; }
+  .font-label-caps { font-family: var(--font-label-caps); font-size: 11px; line-height: 16px; letter-spacing: 0.05em; font-weight: 700; text-transform: uppercase; }
+  .font-code-sm { font-family: var(--font-code-sm); font-size: 12px; line-height: 16px; font-weight: 400; }
+  .font-title-lg { font-family: var(--font-title-lg); font-size: 18px; line-height: 24px; font-weight: 600; }
+
+  .glass-panel {
+    background-color: rgba(27, 31, 44, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(133, 147, 150, 0.15);
+  }
+
+  .glow-active, .active-glow {
+    box-shadow: 0 0 15px rgba(40, 210, 230, 0.18);
+  }
+
+  .gradient-border-card {
+    position: relative;
+    background: #1b1f2c;
+    border-radius: 0.25rem;
+    z-index: 1;
+  }
+  .gradient-border-card::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 0.25rem;
+    background: linear-gradient(135deg, #28d2e6, #6620bd);
+    z-index: -1;
+    opacity: 0.6;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0f131f;
+}
+::-webkit-scrollbar-thumb {
+  background: #303442;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #859396;
+}
+
+/* Material Symbols sizing helper */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+}
