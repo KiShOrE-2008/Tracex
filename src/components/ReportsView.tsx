@@ -4,7 +4,10 @@ import {
   MOCK_TOWER_PINGS,
   MOCK_FINANCIAL_TXNS,
   MOCK_ENTITY_DNA,
-  MOCK_TIMELINE_EVENTS
+  MOCK_TIMELINE_EVENTS,
+  MOCK_ALERTS,
+  MOCK_CORRELATIONS,
+  MOCK_SOCIAL_POSTS
 } from '../data/mockForensicData';
 
 interface ReportsViewProps {
@@ -17,8 +20,11 @@ export const ReportsView = ({ files, caseId }: ReportsViewProps) => {
   const [includeFileDetails, setIncludeFileDetails] = useState(true);
   const [includeTowerLogs, setIncludeTowerLogs] = useState(true);
   const [includeFinanceLogs, setIncludeFinanceLogs] = useState(true);
+  const [includeAlerts, setIncludeAlerts] = useState(true);
+  const [includeCorrelations, setIncludeCorrelations] = useState(true);
+  const [includeSocialMedia, setIncludeSocialMedia] = useState(true);
   const [includeSuspectDossier, setIncludeSuspectDossier] = useState(true);
-  const [activeTab, setActiveTab] = useState<'all' | '65b' | 'files' | 'finance' | 'geo'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | '65b' | 'files' | 'alerts' | 'correlation' | 'geo' | 'finance' | 'social'>('all');
   const [expandedFileId, setExpandedFileId] = useState<string | null>('EV-1001');
 
   const handlePrint = () => {
@@ -27,6 +33,7 @@ export const ReportsView = ({ files, caseId }: ReportsViewProps) => {
 
   // Download legal Sec 65B Certificate text file
   const handleDownloadTxt = () => {
+    const activeAlertsCount = MOCK_ALERTS.filter(a => !a.isDismissed).length;
     const certText = `
 CHANDIGARH POLICE • CYBER CRIME CELL
 FORENSIC EXAMINATION REPORT & SECTION 65B CERTIFICATE
@@ -40,7 +47,7 @@ CERTIFICATE UNDER SECTION 65B OF THE INDIAN EVIDENCE ACT, 1872
 
 I, Inspector R. S. Gill, Cyber Crime Cell, Chandigarh Police, do hereby certify that:
 
-1. The electronic records detailed in Schedule 'A' below were ingested and analyzed by the Police Nexus Forensic Platform (v2.4.0) operating continuously under strict chain-of-custody protocols.
+1. The electronic records detailed in Schedule 'A' below were ingested and analyzed by the Police Nexus Forensic Platform (v3.0.0) operating continuously under strict chain-of-custody protocols.
 2. During the period over which the electronic records were created and ingested, the forensic computer system was operating properly without unauthorized alteration or tampering.
 3. Cryptographic SHA-256 hashes were calculated immediately upon physical extraction and match the master UFED bit-stream disk images.
 
@@ -54,11 +61,12 @@ ${files.map((f, i) => `${i + 1}. [${f.id}] ${f.name}
 `).join('\n')}
 
 ================================================================================
-CORE INVESTIGATIVE FINDINGS SUMMARY
+CORE INVESTIGATIVE & CROSS-DOMAIN CORRELATION FINDINGS SUMMARY
 ================================================================================
-- Cell Tower Co-Location: Vikram Sharma (+91 98765 43210) & Rajesh Verma (+91 91234 56789) locked onto Sector 43 ISBT tower (CHD-4301-A & B) simultaneously at 02:14 AM on 17-Aug-2026.
-- Financial Flow Layering: 42 micro-deposits (Rs 4,11,600) into apex.trading@icici debited via HDFC Account ...8921 to Apex Trading UAE FZE (Rs 25,00,000 RTGS).
-- UFED Encrypted Chat Directive: Decrypted message instructs cash clearance before 4 PM to Mohali drop point.
+- Auto-Detected Anomaly Alerts: ${activeAlertsCount} Active Critical & High severity alerts logged across CDR, Banking, Social Media, IP, and Geospatial channels.
+- Primary Suspect Correlation (Vikram Sharma ↔ Rajesh Verma): 91/100 Connection Strength supported by 142 CDR calls, 3 tower co-locations (Sector 43 ISBT @ 02:14 AM), ₹85,000 UPI transfer, shared ProtonVPN IP session, and Instagram DM directive (@shadow01).
+- Offshore Financial Layering: 42 micro-deposits (₹4,11,600) into apex.trading@icici debited via HDFC Account ...8921 to Apex Trading UAE FZE (₹25,00,000 RTGS).
+- Social Media OSINT: 15 scraped posts / decrypted messages across Instagram, Twitter, and WhatsApp exports linking suspects to common IP 103.24.88.12.
 
 CERTIFIED BY:
 Inspector R. S. Gill (ID: PN-789)
@@ -83,6 +91,9 @@ Cryptographic Integrity Verification Hash: 9b8a7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1
       generatedAt: new Date().toISOString(),
       authority: 'Chandigarh Police Cyber Crime Cell',
       evidenceFiles: files,
+      anomalyAlerts: MOCK_ALERTS,
+      correlationMatrix: MOCK_CORRELATIONS,
+      socialMediaPosts: MOCK_SOCIAL_POSTS,
       coLocationTowerLogs: MOCK_TOWER_PINGS,
       financialFlowLogs: MOCK_FINANCIAL_TXNS,
       suspectDossiers: MOCK_ENTITY_DNA,
@@ -137,7 +148,7 @@ Cryptographic Integrity Verification Hash: 9b8a7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1
             className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#6dedff] to-[#28d2e6] text-[#00363d] font-label-caps text-[11px] font-extrabold hover:from-[#95f1ff] hover:to-[#6dedff] transition-all shadow-[0_0_20px_rgba(40,210,230,0.35)] hover:shadow-[0_0_25px_rgba(40,210,230,0.6)] flex items-center gap-1.5 cursor-pointer active:scale-95"
           >
             <span className="material-symbols-outlined text-[18px]">print</span>
-            PRINT / EXPORT REPORT
+            PRINT / EXPORT PDF
           </button>
         </div>
       </div>
@@ -150,9 +161,12 @@ Cryptographic Integrity Verification Hash: 9b8a7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1
           {[
             { id: 'all', label: 'Full Dossier (Complete)' },
             { id: '65b', label: 'Sec 65B Certificate' },
-            { id: 'files', label: 'Evidence Files Audit' },
+            { id: 'files', label: 'Evidence Audit' },
+            { id: 'alerts', label: 'Anomalies & Alerts' },
+            { id: 'correlation', label: 'Cross-Correlation' },
             { id: 'geo', label: 'Tower Co-Location' },
-            { id: 'finance', label: 'Financial Trail' }
+            { id: 'finance', label: 'Financial Trail' },
+            { id: 'social', label: 'Social Media OSINT' },
           ].map((t) => (
             <button
               key={t.id}
@@ -169,7 +183,7 @@ Cryptographic Integrity Verification Hash: 9b8a7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1
         </div>
 
         {/* Checkbox Section Filters */}
-        <div className="flex items-center gap-3 text-[11px] font-body-sm text-[#bbc9cc]">
+        <div className="flex flex-wrap items-center gap-3 text-[11px] font-body-sm text-[#bbc9cc]">
           <label className="flex items-center gap-1.5 cursor-pointer hover:text-[#dfe2f4]">
             <input
               type="checkbox"
@@ -191,6 +205,24 @@ Cryptographic Integrity Verification Hash: 9b8a7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1
           <label className="flex items-center gap-1.5 cursor-pointer hover:text-[#dfe2f4]">
             <input
               type="checkbox"
+              checked={includeAlerts}
+              onChange={(e) => setIncludeAlerts(e.target.checked)}
+              className="accent-[#6dedff]"
+            />
+            Anomalies
+          </label>
+          <label className="flex items-center gap-1.5 cursor-pointer hover:text-[#dfe2f4]">
+            <input
+              type="checkbox"
+              checked={includeCorrelations}
+              onChange={(e) => setIncludeCorrelations(e.target.checked)}
+              className="accent-[#6dedff]"
+            />
+            Correlations
+          </label>
+          <label className="flex items-center gap-1.5 cursor-pointer hover:text-[#dfe2f4]">
+            <input
+              type="checkbox"
               checked={includeTowerLogs}
               onChange={(e) => setIncludeTowerLogs(e.target.checked)}
               className="accent-[#6dedff]"
@@ -205,6 +237,15 @@ Cryptographic Integrity Verification Hash: 9b8a7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1
               className="accent-[#6dedff]"
             />
             Money Flow
+          </label>
+          <label className="flex items-center gap-1.5 cursor-pointer hover:text-[#dfe2f4]">
+            <input
+              type="checkbox"
+              checked={includeSocialMedia}
+              onChange={(e) => setIncludeSocialMedia(e.target.checked)}
+              className="accent-[#6dedff]"
+            />
+            Social OSINT
           </label>
           <label className="flex items-center gap-1.5 cursor-pointer hover:text-[#dfe2f4]">
             <input
@@ -267,7 +308,7 @@ Cryptographic Integrity Verification Hash: 9b8a7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1
 
             <ol className="list-decimal list-inside font-body-sm text-[12.5px] text-[#bbc9cc] space-y-2 pl-2 print:text-black">
               <li>
-                The electronic records detailed in this report were generated and processed by the <strong>Police Nexus Forensic Platform (v2.4.0)</strong> operating continuously under strict chain-of-custody protocols.
+                The electronic records detailed in this report were generated and processed by the <strong>Police Nexus Forensic Platform (v3.0.0)</strong> operating continuously under strict chain-of-custody protocols.
               </li>
               <li>
                 During the entire period of ingestion and analysis, the computer systems and cryptographic hashing modules operated properly with integrity protection.
@@ -424,13 +465,104 @@ Cryptographic Integrity Verification Hash: 9b8a7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1
           </div>
         )}
 
-        {/* SECTION 4: Geospatial & Cell Tower Co-Location Audit */}
+        {/* NEW SECTION 4: Anomaly Detection & Auto-Detected Alerts */}
+        {(activeTab === 'all' || activeTab === 'alerts') && includeAlerts && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-[#3c494b]/30 pb-2 print:border-black">
+              <h3 className="font-headline-sm text-[16px] text-red-300 font-bold flex items-center gap-2 print:text-black">
+                <span className="material-symbols-outlined text-red-400 text-[18px] print:text-black">crisis_alert</span>
+                3. Automated Anomaly Detections & Alert Audit Log ({MOCK_ALERTS.length} Alerts)
+              </h3>
+              <span className="px-2.5 py-0.5 rounded bg-red-500/15 text-red-300 border border-red-500/30 font-label-caps text-[10px] font-bold print:text-black print:border-black">
+                ANOMALY AUDIT
+              </span>
+            </div>
+
+            <div className="overflow-x-auto rounded-xl border border-[#3c494b]/30 bg-[#0f131f] print:bg-white print:border-black">
+              <table className="w-full text-left font-code-sm text-[11px]">
+                <thead className="bg-[#172034] text-[#859396] border-b border-[#3c494b]/30 print:bg-gray-100 print:text-black">
+                  <tr>
+                    <th className="px-3 py-2">ALERT ID</th>
+                    <th className="px-3 py-2">SEVERITY / DOMAIN</th>
+                    <th className="px-3 py-2">TITLE & DESCRIPTION</th>
+                    <th className="px-3 py-2">TIMESTAMP</th>
+                    <th className="px-3 py-2">TARGET ENTITIES</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#3c494b]/20 print:divide-gray-300">
+                  {MOCK_ALERTS.map((alert) => (
+                    <tr key={alert.id} className={alert.severity === 'CRITICAL' ? 'bg-red-500/10 print:bg-gray-50' : ''}>
+                      <td className="px-3 py-2 text-red-400 font-bold print:text-black">{alert.id}</td>
+                      <td className="px-3 py-2">
+                        <span className="font-bold print:text-black">{alert.severity}</span>
+                        <span className="text-[#859396] block text-[10px] print:text-black">[{alert.category}]</span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="text-[#dfe2f4] font-semibold print:text-black">{alert.title}</div>
+                        <div className="text-[#bbc9cc] text-[10.5px] print:text-black">{alert.body}</div>
+                      </td>
+                      <td className="px-3 py-2 text-[#859396] whitespace-nowrap print:text-black">{alert.timestamp}</td>
+                      <td className="px-3 py-2 text-[#6dedff] print:text-black">{alert.relatedEntities.join(', ')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* NEW SECTION 5: Cross-Domain Correlation Analysis ("WHY ARE THESE CONNECTED?") */}
+        {(activeTab === 'all' || activeTab === 'correlation') && includeCorrelations && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-[#3c494b]/30 pb-2 print:border-black">
+              <h3 className="font-headline-sm text-[16px] text-[#6dedff] font-bold flex items-center gap-2 print:text-black">
+                <span className="material-symbols-outlined text-[#6dedff] text-[18px] print:text-black">link</span>
+                4. Cross-Domain Correlation Matrix — Why Entities Are Connected
+              </h3>
+              <span className="px-2.5 py-0.5 rounded bg-[#6dedff]/15 text-[#6dedff] border border-[#6dedff]/30 font-label-caps text-[10px] font-bold print:text-black print:border-black">
+                CORRELATION AUDIT
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {MOCK_CORRELATIONS.map((c) => (
+                <div key={c.id} className="p-4 rounded-xl bg-[#0f131f] border border-[#3c494b]/30 space-y-3 print:bg-white print:border-black">
+                  <div className="flex items-center justify-between border-b border-[#3c494b]/20 pb-2 print:border-black">
+                    <div className="flex items-center gap-2">
+                      <span className="font-body-md text-[14px] font-bold text-[#dfe2f4] print:text-black">{c.entityA}</span>
+                      <span className="text-[#6dedff] font-bold print:text-black">←────────→</span>
+                      <span className="font-body-md text-[14px] font-bold text-[#dfe2f4] print:text-black">{c.entityB}</span>
+                    </div>
+                    <span className="px-3 py-1 rounded bg-[#6dedff]/20 text-[#6dedff] font-code-sm text-[12px] font-bold border border-[#6dedff]/40 print:text-black print:border-black">
+                      SCORE: {c.score} / 100 ({c.verdict})
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="font-label-caps text-[10px] text-[#859396] block mb-2 print:text-black">SUPPORTED BY {c.evidenceSources.length} INDEPENDENT EVIDENCE SOURCES</span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {c.evidenceSources.map((src, idx) => (
+                        <div key={idx} className="p-2.5 rounded bg-[#171b28] border border-[#3c494b]/30 flex items-center gap-2 text-[11.5px] print:bg-gray-50 print:border-black">
+                          <span className="text-emerald-400 font-bold print:text-black">✓</span>
+                          <span className="font-label-caps text-[9px] px-1.5 py-0.5 rounded bg-[#1f273d] text-[#36d9ed] print:text-black">{src.channel}</span>
+                          <span className="text-[#dfe2f4] print:text-black">{src.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* SECTION 6: Geospatial & Cell Tower Co-Location Audit */}
         {(activeTab === 'all' || activeTab === 'geo') && includeTowerLogs && (
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-[#3c494b]/30 pb-2 print:border-black">
               <h3 className="font-headline-sm text-[16px] text-[#dfe2f4] font-bold flex items-center gap-2 print:text-black">
                 <span className="material-symbols-outlined text-amber-400 text-[18px] print:text-black">cell_tower</span>
-                3. Geospatial Cell Site Co-Location Log ({MOCK_TOWER_PINGS.length} Pings)
+                5. Geospatial Cell Site Co-Location Log ({MOCK_TOWER_PINGS.length} Pings)
               </h3>
               <span className="px-2.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 font-label-caps text-[10px] font-bold print:text-black print:border-black">
                 CO-LOCATION DETECTED
@@ -469,13 +601,13 @@ Cryptographic Integrity Verification Hash: 9b8a7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1
           </div>
         )}
 
-        {/* SECTION 5: Financial Flow & Hawala Layering Audit */}
+        {/* SECTION 7: Financial Flow & Hawala Layering Audit */}
         {(activeTab === 'all' || activeTab === 'finance') && includeFinanceLogs && (
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-[#3c494b]/30 pb-2 print:border-black">
               <h3 className="font-headline-sm text-[16px] text-[#dfe2f4] font-bold flex items-center gap-2 print:text-black">
                 <span className="material-symbols-outlined text-purple-400 text-[18px] print:text-black">currency_exchange</span>
-                4. Financial Flow & Money Layering Audit ({MOCK_FINANCIAL_TXNS.length} Flagged Transactions)
+                6. Financial Flow & Money Layering Audit ({MOCK_FINANCIAL_TXNS.length} Flagged Transactions)
               </h3>
               <span className="px-2.5 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30 font-label-caps text-[10px] font-bold print:text-black print:border-black">
                 HIGH RISK HAWALA TRAIL
@@ -514,11 +646,64 @@ Cryptographic Integrity Verification Hash: 9b8a7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1
           </div>
         )}
 
-        {/* SECTION 6: Suspect Entity DNA Dossier */}
+        {/* NEW SECTION 8: Social Media Intelligence OSINT Extractions */}
+        {(activeTab === 'all' || activeTab === 'social') && includeSocialMedia && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-[#3c494b]/30 pb-2 print:border-black">
+              <h3 className="font-headline-sm text-[16px] text-purple-300 font-bold flex items-center gap-2 print:text-black">
+                <span className="material-symbols-outlined text-purple-400 text-[18px] print:text-black">public</span>
+                7. Social Media Intelligence OSINT Log ({MOCK_SOCIAL_POSTS.length} Scraped Posts / Messages)
+              </h3>
+              <span className="px-2.5 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/30 font-label-caps text-[10px] font-bold print:text-black print:border-black">
+                SOCIAL OSINT LOG
+              </span>
+            </div>
+
+            <div className="overflow-x-auto rounded-xl border border-[#3c494b]/30 bg-[#0f131f] print:bg-white print:border-black">
+              <table className="w-full text-left font-code-sm text-[11px]">
+                <thead className="bg-[#172034] text-[#859396] border-b border-[#3c494b]/30 print:bg-gray-100 print:text-black">
+                  <tr>
+                    <th className="px-3 py-2">PLATFORM & ID</th>
+                    <th className="px-3 py-2">AUTHOR / HANDLE</th>
+                    <th className="px-3 py-2">EXTRACTED CONTENT / DIRECTIVE</th>
+                    <th className="px-3 py-2">TIMESTAMP</th>
+                    <th className="px-3 py-2">LINKED IP / METADATA</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#3c494b]/20 print:divide-gray-300">
+                  {MOCK_SOCIAL_POSTS.map((sp) => (
+                    <tr key={sp.id} className={sp.sentiment === 'SUSPICIOUS' ? 'bg-purple-500/10 print:bg-gray-50' : ''}>
+                      <td className="px-3 py-2">
+                        <span className="text-[#36d9ed] font-bold print:text-black">{sp.platform}</span>
+                        <span className="text-[#859396] block text-[10px] print:text-black">{sp.evidenceId}</span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="text-[#dfe2f4] font-semibold print:text-black">{sp.author}</div>
+                        <div className="text-[#6dedff] text-[10px] print:text-black">{sp.handle}</div>
+                      </td>
+                      <td className="px-3 py-2 text-[#dfe2f4] italic print:text-black">
+                        "{sp.text}"
+                        {sp.mentionedEntities.length > 0 && (
+                          <div className="text-purple-300 text-[10px] not-italic mt-0.5 print:text-black">
+                            Mentions: {sp.mentionedEntities.join(', ')}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-[#859396] whitespace-nowrap print:text-black">{sp.timestamp}</td>
+                      <td className="px-3 py-2 text-[#rose-300] print:text-black">{sp.linkedIp || 'N/A'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* SECTION 9: Suspect Entity DNA Dossier */}
         {(activeTab === 'all') && includeSuspectDossier && (
           <div className="space-y-4">
             <h3 className="font-headline-sm text-[16px] text-[#dfe2f4] font-bold border-b border-[#3c494b]/30 pb-2 print:border-black print:text-black">
-              5. Core Suspect DNA & Threat Intelligence Dossiers ({MOCK_ENTITY_DNA.length} Profiles)
+              8. Core Suspect DNA & Threat Intelligence Dossiers ({MOCK_ENTITY_DNA.length} Profiles)
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -538,7 +723,7 @@ Cryptographic Integrity Verification Hash: 9b8a7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1
           </div>
         )}
 
-        {/* SECTION 7: Official Signatures & Digital Certification Seal */}
+        {/* SECTION 10: Official Signatures & Digital Certification Seal */}
         <div className="pt-6 border-t-2 border-[#3c494b]/30 grid grid-cols-2 gap-8 print:border-black">
           <div className="space-y-8">
             <div>
@@ -565,4 +750,3 @@ Cryptographic Integrity Verification Hash: 9b8a7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1
     </div>
   );
 };
-

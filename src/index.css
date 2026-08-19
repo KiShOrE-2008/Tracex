@@ -218,17 +218,22 @@ body {
    ========================================== */
 @media print {
   @page {
-    size: A4 landscape;
-    margin: 10mm 10mm 10mm 10mm;
+    size: landscape;
+    margin: 10mm;
   }
 
   /* 1. Hide non-report UI elements */
   aside,
   header,
   nav,
-  .print\:hidden,
-  .material-symbols-outlined {
+  .print\:hidden {
     display: none !important;
+  }
+
+  /* Material symbols in report should render nicely */
+  .material-symbols-outlined {
+    font-size: 16px !important;
+    vertical-align: middle !important;
   }
 
   /* 2. Reset app containers to full-width legal page layout */
