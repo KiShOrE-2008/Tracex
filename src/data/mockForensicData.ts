@@ -369,11 +369,14 @@ export const MOCK_ENTITY_DNA: EntityDNA[] = [
 ];
 
 export const MOCK_AUDIT_LOGS: AuditLogItem[] = [
-  { id: 'LOG-8801', timestamp: '2026-08-18 09:42:15', analyst: 'Insp. R. S. Gill (ID: PN-789)', action: 'FILE_INGESTION', resource: 'airtel_suspect_1_cdr.csv', hash: '8f4e2b91c83a54d7e6201f9a1c4b7890d2e4f5a6', ipAddress: '10.240.12.45' },
-  { id: 'LOG-8802', timestamp: '2026-08-18 09:44:30', analyst: 'Insp. R. S. Gill (ID: PN-789)', action: 'OCR_PARSE', resource: 'hdfc_bank_statement_Q3.pdf', hash: '3a9c4d8e7b1a2f5c6d0e9f8a7b6c5d4e3f2a1b0c', ipAddress: '10.240.12.45' },
-  { id: 'LOG-8803', timestamp: '2026-08-18 10:15:02', analyst: 'Forensic Analyst K. Mehta', action: 'GRAPH_LINK_ANALYSIS', resource: 'PN-2026-001 Entity Canvas', hash: '4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f', ipAddress: '10.240.12.88' },
-  { id: 'LOG-8804', timestamp: '2026-08-18 11:05:40', analyst: 'Forensic Analyst K. Mehta', action: 'TOWER_CO_LOCATION_QUERY', resource: 'Sector 43 ISBT Cell Site', hash: '1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b', ipAddress: '10.240.12.88' },
-  { id: 'LOG-8805', timestamp: '2026-08-18 12:30:00', analyst: 'SSP Cyber Cell (Admin)', action: 'REPORT_EXPORT', resource: 'Operation_Shadow_Court_Report.pdf', hash: '9b8a7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b', ipAddress: '10.240.10.01' }
+  { id: 'LOG-8801', timestamp: '2026-08-18 09:42:15', analyst: 'Insp. R. S. Gill', role: 'investigator', action: 'LOGIN', resource: 'PN-2026-001', hash: '8f4e2b91c83a54d7e6201f9a1c4b7890d2e4f5a6', prevHash: '0000000000000000000000000000000000000000', ipAddress: '10.240.12.45' },
+  { id: 'LOG-8802', timestamp: '2026-08-18 09:43:02', analyst: 'Insp. R. S. Gill', role: 'investigator', action: 'CASE_OPEN', resource: 'PN-2026-001', hash: '3a9c4d8e7b1a2f5c6d0e9f8a7b6c5d4e3f2a1b0c', prevHash: '8f4e2b91c83a54d7e6201f9a1c4b7890d2e4f5a6', ipAddress: '10.240.12.45' },
+  { id: 'LOG-8803', timestamp: '2026-08-18 09:44:31', analyst: 'Insp. R. S. Gill', role: 'investigator', action: 'FILE_INGESTION', resource: 'airtel_suspect_1_cdr.csv', hash: '4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f', prevHash: '3a9c4d8e7b1a2f5c6d0e9f8a7b6c5d4e3f2a1b0c', ipAddress: '10.240.12.45' },
+  { id: 'LOG-8804', timestamp: '2026-08-18 09:45:08', analyst: 'Insp. R. S. Gill', role: 'investigator', action: 'HASH_GENERATED', resource: 'airtel_suspect_1_cdr.csv', hash: '1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b', prevHash: '4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f', ipAddress: '10.240.12.45' },
+  { id: 'LOG-8805', timestamp: '2026-08-18 10:02:44', analyst: 'K. Mehta', role: 'analyst', action: 'GRAPH_LINK_ANALYSIS', resource: 'PN-2026-001 Entity Canvas', hash: '9b8a7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b', prevHash: '1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b', ipAddress: '10.240.12.88' },
+  { id: 'LOG-8806', timestamp: '2026-08-18 10:14:21', analyst: 'K. Mehta', role: 'analyst', action: 'CORRELATION_QUERY', resource: 'PN-2026-001', hash: 'ae1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b', prevHash: '9b8a7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b', ipAddress: '10.240.12.88' },
+  { id: 'LOG-8807', timestamp: '2026-08-18 10:25:11', analyst: 'K. Mehta', role: 'analyst', action: 'SENSITIVE_DATA_ACCESS', resource: 'Vikram Sharma (phone)', hash: 'bf2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c', prevHash: 'ae1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b', ipAddress: '10.240.12.88' },
+  { id: 'LOG-8808', timestamp: '2026-08-18 10:31:42', analyst: 'Insp. R. S. Gill', role: 'investigator', action: 'REPORT_EXPORT', resource: 'Operation_Shadow_Court_Report.pdf', hash: 'cd3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d', prevHash: 'bf2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c', ipAddress: '10.240.12.45' },
 ];
 
 export const MOCK_ALERTS: AlertItem[] = [

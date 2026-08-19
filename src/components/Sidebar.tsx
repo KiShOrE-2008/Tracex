@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { FC } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 export type NavTab = 
   | 'overview'
@@ -16,7 +17,10 @@ export type NavTab =
   | 'settings'
   | 'alerts'
   | 'correlation'
-  | 'social_media';
+  | 'social_media'
+  | 'user_management'
+  | 'security_center'
+  | 'access_control';
 
 interface SidebarProps {
   activeTab: NavTab;
@@ -32,13 +36,21 @@ interface NavItem {
   icon: string;
   badge?: number;
   badgeColor?: 'cyan' | 'red';
+  requiredPermission?: string;
 }
 
 interface NavGroup {
   label: string;
   icon: string;
   items: NavItem[];
+  requiredRole?: 'admin' | 'investigator' | 'analyst';
 }
+
+const ROLE_COLORS = {
+  admin: 'text-red-400 bg-red-500/15 border-red-500/30',
+  investigator: 'text-amber-400 bg-amber-500/15 border-amber-500/30',
+  analyst: 'text-sky-400 bg-sky-500/15 border-sky-500/30',
+};
 
 export const Sidebar: FC<SidebarProps> = ({
   activeTab,
@@ -48,19 +60,21 @@ export const Sidebar: FC<SidebarProps> = ({
   alertCount
 }) => {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const { session, logout, hasPermission } = useAuth();
+  const role = session?.user?.role ?? 'analyst';
 
   const toggleGroup = (label: string) => {
     setCollapsed(prev => ({ ...prev, [label]: !prev[label] }));
   };
 
-  const navGroups: NavGroup[] = [
+  const allNavGroups: NavGroup[] = [
     {
       label: 'INTELLIGENCE',
       icon: 'psychology',
       items: [
         { id: 'overview',      label: 'Overview',    icon: 'dashboard'   },
-        { id: 'alerts',        label: 'Alert Center',icon: 'crisis_alert',badge: alertCount, badgeColor: 'red' },
-        { id: 'copilot',       label: 'AI Copilot',  icon: 'smart_toy'   },
+        { id: 'alerts',        label: 'Alert Center',icon: 'crisis_alert', badge: alertCount, badgeColor: 'red' },
+        { id: 'copilot',       label: 'AI Copilot',  icon: 'smart_toy',   requiredPermission: 'access_copilot' },
       ]
     },
     {
@@ -69,31 +83,48 @@ export const Sidebar: FC<SidebarProps> = ({
       items: [
         { id: 'evidence',      label: 'Vault',        icon: 'inventory_2', badge: evidenceCount, badgeColor: 'cyan' },
         { id: 'processing',    label: 'Processing',   icon: 'settings_suggest' },
-        { id: 'social_media',  label: 'Social Media', icon: 'public'      },
+        { id: 'social_media',  label: 'Social Media', icon: 'public',      requiredPermission: 'view_social' },
       ]
     },
     {
       label: 'ANALYSIS',
       icon: 'analytics',
       items: [
-        { id: 'graph',         label: 'Link Graph',   icon: 'account_tree' },
-        { id: 'correlation',   label: 'Correlation',  icon: 'link'         },
-        { id: 'map',           label: 'Cell Tower Map',icon: 'map'         },
-        { id: 'timeline',      label: 'Timeline',     icon: 'schedule'    },
-        { id: 'finance',       label: 'Finance Flow', icon: 'payments'    },
-        { id: 'entity_dna',    label: 'Entity DNA',   icon: 'fingerprint' },
+        { id: 'graph',         label: 'Link Graph',    icon: 'account_tree', requiredPermission: 'view_graph' },
+        { id: 'correlation',   label: 'Correlation',   icon: 'link',         requiredPermission: 'view_correlation' },
+        { id: 'map',           label: 'Cell Tower Map',icon: 'map',          requiredPermission: 'view_map' },
+        { id: 'timeline',      label: 'Timeline',      icon: 'schedule',     requiredPermission: 'view_timeline' },
+        { id: 'finance',       label: 'Finance Flow',  icon: 'payments',     requiredPermission: 'view_finance' },
+        { id: 'entity_dna',    label: 'Entity DNA',    icon: 'fingerprint',  requiredPermission: 'view_entity_dna' },
       ]
     },
     {
       label: 'REPORTING',
       icon: 'description',
       items: [
-        { id: 'reports',       label: 'Reports',      icon: 'description' },
-        { id: 'audit_log',     label: 'Audit Log',    icon: 'history_edu' },
-        { id: 'settings',      label: 'Settings',     icon: 'settings'    },
+        { id: 'reports',       label: 'Reports',       icon: 'description' },
+        { id: 'audit_log',     label: 'Audit Log',     icon: 'history_edu', requiredPermission: 'view_audit_log' },
+        { id: 'settings',      label: 'Settings',      icon: 'settings',    requiredPermission: 'access_settings' },
+      ]
+    },
+    {
+      label: 'ADMINISTRATION',
+      icon: 'admin_panel_settings',
+      requiredRole: 'admin',
+      items: [
+        { id: 'user_management',  label: 'User Management', icon: 'manage_accounts' },
+        { id: 'security_center',  label: 'Security Center', icon: 'verified_user' },
+        { id: 'access_control',   label: 'Access Control',  icon: 'lock_person' },
       ]
     },
   ];
+
+  // Security Center always visible for admin, also let investigator see it
+  // For analysts — security center is locked
+  const navGroups = allNavGroups.filter(g => {
+    if (g.requiredRole && g.requiredRole !== role) return false;
+    return true;
+  });
 
   return (
     <aside className="docked left-0 h-full w-64 border-r border-[#6dedff]/15 bg-[#0e1220]/90 backdrop-blur-xl flex flex-col py-3 z-20 shrink-0 select-none shadow-[4px_0_24px_rgba(0,0,0,0.5)] relative print:hidden">
@@ -145,6 +176,9 @@ export const Sidebar: FC<SidebarProps> = ({
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-[14px]">{group.icon}</span>
                   <span className="font-label-caps text-[9px] tracking-widest font-bold">{group.label}</span>
+                  {group.requiredRole === 'admin' && (
+                    <span className="font-label-caps text-[8px] px-1 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 tracking-wider">ADMIN</span>
+                  )}
                 </div>
                 <span className="material-symbols-outlined text-[14px] transition-transform duration-200" style={{ transform: isOpen ? 'rotate(0deg)' : 'rotate(-90deg)' }}>
                   expand_more
@@ -156,20 +190,25 @@ export const Sidebar: FC<SidebarProps> = ({
                 <div className="space-y-0.5 mb-2">
                   {group.items.map(item => {
                     const isActive = activeTab === item.id;
+                    const isLocked = item.requiredPermission ? !hasPermission(item.requiredPermission) : false;
                     const isAlertItem = item.id === 'alerts' && (item.badge ?? 0) > 0;
                     return (
                       <button
                         key={item.id}
-                        onClick={() => setActiveTab(item.id)}
-                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg transition-all duration-200 cursor-pointer text-left group relative ${
-                          isActive
-                            ? 'text-[#6dedff] bg-gradient-to-r from-[#6dedff]/15 to-transparent font-semibold border-l-2 border-[#6dedff] shadow-[inset_0_0_15px_rgba(40,210,230,0.1)]'
-                            : 'text-[#859396] hover:text-[#dfe2f4] hover:bg-[#1f263c]/60'
+                        onClick={() => !isLocked && setActiveTab(item.id)}
+                        disabled={isLocked}
+                        title={isLocked ? `Requires higher clearance` : undefined}
+                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg transition-all duration-200 text-left group relative ${
+                          isLocked
+                            ? 'opacity-40 cursor-not-allowed text-[#859396]'
+                            : isActive
+                              ? 'text-[#6dedff] bg-gradient-to-r from-[#6dedff]/15 to-transparent font-semibold border-l-2 border-[#6dedff] shadow-[inset_0_0_15px_rgba(40,210,230,0.1)] cursor-pointer'
+                              : 'text-[#859396] hover:text-[#dfe2f4] hover:bg-[#1f263c]/60 cursor-pointer'
                         }`}
                       >
                         <div className="flex items-center gap-3">
                           <span
-                            className={`material-symbols-outlined text-[19px] transition-transform duration-200 group-hover:scale-110 ${
+                            className={`material-symbols-outlined text-[19px] transition-transform duration-200 ${!isLocked && 'group-hover:scale-110'} ${
                               isAlertItem ? 'text-red-400 animate-pulse' :
                               isActive ? 'text-[#6dedff]' : 'text-[#859396] group-hover:text-[#6dedff]'
                             }`}
@@ -179,19 +218,24 @@ export const Sidebar: FC<SidebarProps> = ({
                           </span>
                           <span className="font-label-caps text-[11px] tracking-wider font-medium">{item.label}</span>
                         </div>
-                        {item.badge !== undefined && item.badge > 0 && (
-                          <span className={`px-2 py-0.5 rounded-full font-code-sm text-[10px] font-bold border transition-colors ${
-                            item.badgeColor === 'red'
-                              ? isActive
-                                ? 'bg-red-500/25 text-red-300 border-red-500/50 shadow-[0_0_8px_rgba(239,68,68,0.4)]'
-                                : 'bg-red-500/15 text-red-400 border-red-500/30 group-hover:text-red-300'
-                              : isActive
-                                ? 'bg-[#28d2e6]/20 text-[#6dedff] border-[#28d2e6]/50 shadow-[0_0_8px_rgba(40,210,230,0.3)]'
-                                : 'bg-[#1b2032] text-[#859396] border-[#3c494b]/30 group-hover:text-[#dfe2f4]'
-                          }`}>
-                            {item.badge}
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1.5">
+                          {isLocked && (
+                            <span className="material-symbols-outlined text-[13px] text-[#859396]">lock</span>
+                          )}
+                          {!isLocked && item.badge !== undefined && item.badge > 0 && (
+                            <span className={`px-2 py-0.5 rounded-full font-code-sm text-[10px] font-bold border transition-colors ${
+                              item.badgeColor === 'red'
+                                ? isActive
+                                  ? 'bg-red-500/25 text-red-300 border-red-500/50 shadow-[0_0_8px_rgba(239,68,68,0.4)]'
+                                  : 'bg-red-500/15 text-red-400 border-red-500/30 group-hover:text-red-300'
+                                : isActive
+                                  ? 'bg-[#28d2e6]/20 text-[#6dedff] border-[#28d2e6]/50 shadow-[0_0_8px_rgba(40,210,230,0.3)]'
+                                  : 'bg-[#1b2032] text-[#859396] border-[#3c494b]/30 group-hover:text-[#dfe2f4]'
+                            }`}>
+                              {item.badge}
+                            </span>
+                          )}
+                        </div>
                       </button>
                     );
                   })}
@@ -202,17 +246,34 @@ export const Sidebar: FC<SidebarProps> = ({
         })}
       </nav>
 
-      {/* Analyst Footer */}
-      <div className="px-4 pt-3 mt-auto border-t border-[#3c494b]/20 flex items-center gap-3 text-[#859396]">
-        <div className="relative flex items-center justify-center">
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-          <div className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
+      {/* User Footer */}
+      {session && (
+        <div className="px-4 pt-3 mt-2 border-t border-[#3c494b]/20">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="relative flex items-center justify-center">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+              <div className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
+            </div>
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="font-code-sm text-[11px] text-[#dfe2f4] font-medium truncate">{session.user.displayName}</span>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className={`font-label-caps text-[8px] px-1.5 py-0.5 rounded-full border ${ROLE_COLORS[role]} tracking-wider font-bold`}>
+                  {role.toUpperCase()}
+                </span>
+              </div>
+            </div>
+            <button
+              id="logout-btn"
+              onClick={logout}
+              title="Logout"
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-[#859396] hover:text-red-400 hover:bg-red-500/10 transition-all cursor-pointer shrink-0"
+            >
+              <span className="material-symbols-outlined text-[16px]">logout</span>
+            </button>
+          </div>
+          <span className="font-code-sm text-[10px] text-[#859396]">Sec-65B Enforced • v3.0.0</span>
         </div>
-        <div className="flex flex-col min-w-0">
-          <span className="font-code-sm text-[11px] text-[#dfe2f4] font-medium truncate">Node: CHANDIGARH-HQ</span>
-          <span className="font-code-sm text-[10px] text-[#859396] truncate">Sec-65B Enforced • v3.0.0</span>
-        </div>
-      </div>
+      )}
     </aside>
   );
 };

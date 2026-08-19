@@ -1,4 +1,5 @@
 import type { FC } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 interface HeaderProps {
   currentCaseId: string;
@@ -15,6 +16,7 @@ export const Header: FC<HeaderProps> = ({
   setSearchQuery,
   activeTabLabel
 }) => {
+  const { session, logout } = useAuth();
   return (
     <header className="flex justify-between items-center w-full px-6 h-16 bg-[#0f1322]/85 backdrop-blur-xl border-b border-[#6dedff]/15 relative z-10 shrink-0 select-none shadow-[0_4px_20px_rgba(0,0,0,0.4)] print:hidden">
       {/* Bottom glowing line accent */}
@@ -96,18 +98,23 @@ export const Header: FC<HeaderProps> = ({
         <div className="w-px h-6 bg-[#3c494b]/40 mx-0.5"></div>
 
         {/* Analyst Info */}
-        <div className="flex items-center gap-2.5 px-2 py-1 rounded-lg bg-[#181d2f]/60 hover:bg-[#21273d]/80 border border-[#3c494b]/30 hover:border-[#6dedff]/40 transition-all cursor-pointer group">
-          <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-[#6dedff]/40 group-hover:border-[#6dedff] transition-colors shrink-0 shadow-[0_0_10px_rgba(40,210,230,0.2)]">
-            <img
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
-              alt="Analyst Profile"
-              className="w-full h-full object-cover"
-            />
+        <div
+          onClick={logout}
+          title="Logout"
+          className="flex items-center gap-2.5 px-2 py-1 rounded-lg bg-[#181d2f]/60 hover:bg-red-500/10 border border-[#3c494b]/30 hover:border-red-500/30 transition-all cursor-pointer group"
+        >
+          <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-[#6dedff]/40 group-hover:border-red-400/50 transition-colors shrink-0 shadow-[0_0_10px_rgba(40,210,230,0.2)] bg-gradient-to-br from-[#28d2e6]/20 to-[#6620bd]/25 flex items-center justify-center">
+            <span className="material-symbols-outlined text-[#6dedff] text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
           </div>
           <div className="hidden lg:flex flex-col text-left">
-            <span className="font-body-sm text-[12px] font-semibold text-[#dfe2f4] group-hover:text-[#6dedff] transition-colors leading-tight">Insp. R. S. Gill</span>
-            <span className="font-label-caps text-[9px] text-[#28d2e6] tracking-wider font-semibold">Cyber Crime Cell</span>
+            <span className="font-body-sm text-[12px] font-semibold text-[#dfe2f4] group-hover:text-red-300 transition-colors leading-tight">
+              {session?.user.displayName ?? 'Unknown'}
+            </span>
+            <span className="font-label-caps text-[9px] text-[#28d2e6] tracking-wider font-semibold">
+              {session?.user.department ?? ''}
+            </span>
           </div>
+          <span className="material-symbols-outlined text-[14px] text-[#859396] group-hover:text-red-400 transition-colors ml-1">logout</span>
         </div>
       </div>
     </header>

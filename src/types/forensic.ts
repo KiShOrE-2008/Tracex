@@ -132,15 +132,28 @@ export interface CopilotMessage {
   };
 }
 
+export type UserRole = 'admin' | 'investigator' | 'analyst';
+
+export interface AuthUser {
+  username: string;
+  displayName: string;
+  role: UserRole;
+  department: string;
+}
+
 export interface AuditLogItem {
   id: string;
   timestamp: string;
   analyst: string;
+  role: UserRole;
   action: string;
   resource: string;
   hash: string;
+  prevHash: string;
   ipAddress: string;
 }
+
+export type SecurityNavTab = 'user_management' | 'security_center' | 'access_control';
 
 // ─── New PS6 Types ────────────────────────────────────────────────────────────
 

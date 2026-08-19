@@ -1,4 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { LoginView } from './components/LoginView';
 import { Sidebar } from './components/Sidebar';
 import type { NavTab } from './components/Sidebar';
 import { Header } from './components/Header';
@@ -17,6 +19,8 @@ import { CorrelationView } from './components/CorrelationView';
 import { SocialMediaView } from './components/SocialMediaView';
 import { FileMetadataModal } from './components/FileMetadataModal';
 import { NewCaseModal } from './components/NewCaseModal';
+import { SecurityCenterView } from './components/SecurityCenterView';
+import { UserManagementView } from './components/UserManagementView';
 
 import {
   INITIAL_EVIDENCE_FILES,
@@ -32,9 +36,19 @@ import {
   MOCK_SOCIAL_POSTS
 } from './data/mockForensicData';
 
-import type { EvidenceFile } from './types/forensic';
+import type { EvidenceFile, AuditLogItem, UserRole } from './types/forensic';
 
-export function App() {
+// ─── SHA-256 via Web Crypto ───────────────────────────────────────────────────
+async function sha256(message: string): Promise<string> {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ─── Dashboard (inner, needs auth context) ───────────────────────────────────
+function Dashboard() {
+  const { session, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<NavTab>('overview');
   const [currentCaseId, setCurrentCaseId] = useState<string>('PN-2026-001');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -47,7 +61,48 @@ export function App() {
   const [targetEntityForDna, setTargetEntityForDna] = useState<string | undefined>(undefined);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Derived: active (not dismissed) alert count for sidebar badge
+  // Live audit log state (mutable)
+  const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>(MOCK_AUDIT_LOGS);
+
+  // Add audit event with hash chain
+  const addAuditEvent = useCallback(async (
+    partial: Omit<AuditLogItem, 'id' | 'timestamp' | 'ipAddress' | 'hash' | 'prevHash'>
+  ) => {
+    if (!session) return;
+    const prevHash = auditLogs.length > 0 ? auditLogs[auditLogs.length - 1].hash : '0'.repeat(40);
+    const newId = `LOG-${9000 + auditLogs.length}`;
+    const timestamp = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    const payload = `${newId}${timestamp}${partial.analyst}${partial.action}${partial.resource}`;
+    const hash = await sha256(prevHash + payload);
+
+    const newEntry: AuditLogItem = {
+      id: newId,
+      timestamp,
+      analyst: partial.analyst,
+      role: (partial.role as UserRole) ?? session.user.role,
+      action: partial.action,
+      resource: partial.resource,
+      prevHash,
+      hash,
+      ipAddress: session.sessionIp ?? '10.240.0.1',
+    };
+
+    setAuditLogs(prev => [...prev, newEntry]);
+  }, [auditLogs, session]);
+
+  // Log login event on first mount if session exists
+  const [loginLogged, setLoginLogged] = useState(false);
+  if (isAuthenticated && !loginLogged && session) {
+    setLoginLogged(true);
+    // Fire and forget
+    addAuditEvent({
+      analyst: session.user.displayName,
+      role: session.user.role,
+      action: 'LOGIN',
+      resource: `System — ${session.user.department}`,
+    });
+  }
+
   const alertCount = useMemo(() => alerts.filter(a => !a.isDismissed).length, [alerts]);
 
   const showToast = (msg: string) => {
@@ -55,9 +110,17 @@ export function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const handleAddFile = (newFile: EvidenceFile) => {
+  const handleAddFile = async (newFile: EvidenceFile) => {
     setEvidenceFiles((prev: EvidenceFile[]) => [newFile, ...prev]);
     showToast(`Added ${newFile.name} (SHA-256 Verified)`);
+    if (session) {
+      await addAuditEvent({
+        analyst: session.user.displayName,
+        role: session.user.role,
+        action: 'FILE_INGESTION',
+        resource: newFile.name,
+      });
+    }
   };
 
   const handleRemoveFile = (id: string) => {
@@ -86,21 +149,24 @@ export function App() {
   };
 
   const tabLabels: Record<NavTab, string> = {
-    overview:     'Investigation Overview Dashboard',
-    evidence:     'Evidence Vault & Ingestion Queue',
-    processing:   'Processing Pipeline',
-    graph:        'Entity Link Analysis Canvas',
-    map:          'Geospatial Cell Tower Mapping',
-    timeline:     'Chronological Event Stream',
-    finance:      'Financial Flow & Money Trail',
-    entity_dna:   'Entity DNA 360° Profiler',
-    copilot:      'AI Forensic Copilot Assistant',
-    reports:      'Court-Ready Section 65B Reports',
-    audit_log:    'Immutable Audit Log & Hash Chain',
-    settings:     'Workspace Configuration',
-    alerts:       'Anomaly Detection — Alert Center',
-    correlation:  'Cross-Domain Correlation Engine',
-    social_media: 'Social Media Intelligence',
+    overview:         'Investigation Overview Dashboard',
+    evidence:         'Evidence Vault & Ingestion Queue',
+    processing:       'Processing Pipeline',
+    graph:            'Entity Link Analysis Canvas',
+    map:              'Geospatial Cell Tower Mapping',
+    timeline:         'Chronological Event Stream',
+    finance:          'Financial Flow & Money Trail',
+    entity_dna:       'Entity DNA 360° Profiler',
+    copilot:          'AI Forensic Copilot Assistant',
+    reports:          'Court-Ready Section 65B Reports',
+    audit_log:        'Immutable Audit Log & Hash Chain',
+    settings:         'Workspace Configuration',
+    alerts:           'Anomaly Detection — Alert Center',
+    correlation:      'Cross-Domain Correlation Engine',
+    social_media:     'Social Media Intelligence',
+    user_management:  'User Management & Access Control',
+    security_center:  'Security Center — System Status',
+    access_control:   'Role-Based Access Control Matrix',
   };
 
   return (
@@ -125,7 +191,7 @@ export function App() {
           activeTabLabel={tabLabels[activeTab]}
         />
 
-        {/* Dynamic Canvas Container */}
+        {/* Dynamic Canvas */}
         <main className="flex-1 overflow-y-auto p-6 flex flex-col print:p-0 print:overflow-visible print:bg-white print:block print:w-full">
 
           {activeTab === 'overview' && (
@@ -179,6 +245,14 @@ export function App() {
               entities={MOCK_ENTITY_DNA}
               initialSelectedName={targetEntityForDna}
               onOpenGraphForEntity={handleOpenGraphForEntity}
+              onAddAuditLog={(partial) => {
+                addAuditEvent({
+                  analyst: partial.analyst,
+                  role: partial.role,
+                  action: partial.action,
+                  resource: partial.resource,
+                });
+              }}
             />
           )}
 
@@ -191,10 +265,9 @@ export function App() {
           )}
 
           {activeTab === 'audit_log' && (
-            <AuditLogView logs={MOCK_AUDIT_LOGS} />
+            <AuditLogView logs={auditLogs} />
           )}
 
-          {/* NEW TABS */}
           {activeTab === 'alerts' && (
             <AlertsView
               alerts={alerts}
@@ -214,6 +287,18 @@ export function App() {
               posts={MOCK_SOCIAL_POSTS}
               onNavigateTab={(tab) => setActiveTab(tab as NavTab)}
             />
+          )}
+
+          {activeTab === 'security_center' && (
+            <SecurityCenterView recentLogs={auditLogs} />
+          )}
+
+          {activeTab === 'user_management' && (
+            <UserManagementView />
+          )}
+
+          {activeTab === 'access_control' && (
+            <UserManagementView />
           )}
 
           {activeTab === 'settings' && (
@@ -258,6 +343,20 @@ export function App() {
         onCreateCase={handleCreateCase}
       />
     </div>
+  );
+}
+
+// ─── Root App (auth gate) ──────────────────────────────────────────────────
+function AppInner() {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <Dashboard /> : <LoginView />;
+}
+
+export function App() {
+  return (
+    <AuthProvider>
+      <AppInner />
+    </AuthProvider>
   );
 }
 

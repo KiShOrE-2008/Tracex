@@ -1,17 +1,168 @@
-import { useState } from 'react';
-import type { EntityDNA } from '../types/forensic';
+import { useState, useCallback } from 'react';
+import type { EntityDNA, AuditLogItem } from '../types/forensic';
+import { useAuth } from '../context/AuthContext';
 
 interface EntityDnaViewProps {
   entities: EntityDNA[];
   initialSelectedName?: string;
   onOpenGraphForEntity?: (name: string) => void;
+  onAddAuditLog?: (log: Omit<AuditLogItem, 'id' | 'timestamp' | 'ipAddress'>) => void;
 }
 
+// ─── Masking Helpers ─────────────────────────────────────────────────────────
+function maskPhone(ph: string): string {
+  // "+91 98765 43210" → "+91 98765•••10"
+  const clean = ph.replace(/\s/g, '');
+  if (clean.length < 6) return ph;
+  return ph.slice(0, -5) + '•••' + ph.slice(-2);
+}
+
+function maskBank(acc: string): string {
+  // "HDFC 50200049188921" → "HDFC ••••8921"
+  const parts = acc.split(' ');
+  if (parts.length >= 2) {
+    const num = parts[parts.length - 1];
+    const masked = '••••' + num.slice(-4);
+    return parts.slice(0, -1).join(' ') + ' ' + masked;
+  }
+  return '••••' + acc.slice(-4);
+}
+
+function maskUpi(upi: string): string {
+  // "vikram.sharma@okicici" → "vi***@okicici"
+  const at = upi.indexOf('@');
+  if (at > 2) {
+    return upi.slice(0, 2) + '***' + upi.slice(at);
+  }
+  return upi.slice(0, 2) + '***';
+}
+
+// ─── Reveal Modal ─────────────────────────────────────────────────────────────
+interface RevealModalProps {
+  label: string;
+  maskedValue: string;
+  realValue: string;
+  onConfirm: (reason: string) => void;
+  onClose: () => void;
+}
+
+const REVEAL_REASONS = [
+  'Investigation Reference',
+  'Evidence Verification',
+  'Court Order — Section 65B',
+  'Supervisor Directive',
+];
+
+function RevealModal({ label, maskedValue, realValue, onConfirm, onClose }: RevealModalProps) {
+  const [reason, setReason] = useState(REVEAL_REASONS[0]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-[#111827] border border-amber-500/40 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-[0_0_40px_rgba(245,158,11,0.25)]" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center">
+            <span className="material-symbols-outlined text-amber-400 text-[22px]" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span>
+          </div>
+          <div>
+            <h3 className="font-title-lg text-[15px] text-[#dfe2f4] font-bold">Sensitive Data Access</h3>
+            <p className="font-code-sm text-[11px] text-[#859396]">This action will be recorded in the audit log</p>
+          </div>
+        </div>
+
+        <div className="mb-4 p-3 rounded-lg bg-[#1b1f2c] border border-[#3c494b]/30">
+          <div className="font-label-caps text-[9px] text-[#859396] tracking-widest mb-1">{label}</div>
+          <div className="font-code-sm text-[13px] text-amber-400 font-bold">{maskedValue}</div>
+        </div>
+
+        <label className="font-label-caps text-[10px] text-[#859396] tracking-widest block mb-2">REASON FOR ACCESS</label>
+        <select
+          value={reason}
+          onChange={e => setReason(e.target.value)}
+          className="w-full bg-[#1b1f2c] border border-[#3c494b]/40 text-[#dfe2f4] rounded-lg px-3 py-2 font-body-sm text-[13px] focus:outline-none focus:border-amber-400 mb-5"
+        >
+          {REVEAL_REASONS.map(r => <option key={r}>{r}</option>)}
+        </select>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2 rounded-lg border border-[#3c494b]/40 text-[#859396] font-label-caps text-[11px] hover:bg-[#1f263c] transition-colors cursor-pointer"
+          >
+            CANCEL
+          </button>
+          <button
+            id="reveal-confirm-btn"
+            onClick={() => { onConfirm(reason); onClose(); }}
+            className="flex-1 py-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 font-label-caps text-[11px] font-bold hover:bg-amber-500/30 transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <span className="material-symbols-outlined text-[16px]">visibility</span>
+            REVEAL
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Masked Field ─────────────────────────────────────────────────────────────
+interface MaskedFieldProps {
+  label: string;
+  realValue: string;
+  maskFn: (v: string) => string;
+  onReveal: (real: string, label: string) => void;
+}
+
+function MaskedField({ label, realValue, maskFn, onReveal }: MaskedFieldProps) {
+  const [revealed, setRevealed] = useState(false);
+  const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleRevealRequest = () => {
+    onReveal(realValue, label);
+  };
+
+  // Called after audit confirmation
+  const doReveal = useCallback(() => {
+    setRevealed(true);
+    if (timer) clearTimeout(timer);
+    const t = setTimeout(() => setRevealed(false), 15000);
+    setTimer(t);
+  }, [timer]);
+
+  // expose doReveal via a ref-like mechanism by calling it on a custom event
+  // Instead, we'll just trust that the parent calls this via the modal confirm
+  void doReveal; // used externally
+
+  return (
+    <div className="p-2 rounded bg-[#1b1f2c] border border-[#3c494b]/20 flex items-center justify-between gap-2">
+      {revealed ? (
+        <span className="font-code-sm text-[12px] text-emerald-400 font-medium">{realValue}</span>
+      ) : (
+        <span className="font-code-sm text-[12px] text-amber-300/80">{maskFn(realValue)}</span>
+      )}
+      {!revealed && (
+        <button
+          onClick={handleRevealRequest}
+          className="shrink-0 text-[#859396] hover:text-amber-400 transition-colors cursor-pointer"
+          title="Reveal sensitive data"
+        >
+          <span className="material-symbols-outlined text-[16px]">visibility</span>
+        </button>
+      )}
+      {revealed && (
+        <span className="material-symbols-outlined text-[14px] text-emerald-400 shrink-0">check_circle</span>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Component ────────────────────────────────────────────────────────────
 export const EntityDnaView = ({
   entities,
   initialSelectedName,
-  onOpenGraphForEntity
+  onOpenGraphForEntity,
+  onAddAuditLog,
 }: EntityDnaViewProps) => {
+  const { session } = useAuth();
   const [selectedId, setSelectedId] = useState<string>(() => {
     if (initialSelectedName) {
       const match = entities.find(e => e.name.toLowerCase().includes(initialSelectedName.toLowerCase()));
@@ -20,11 +171,54 @@ export const EntityDnaView = ({
     return entities[0]?.id || 'DNA-01';
   });
 
+  // Reveal modal state
+  const [revealModal, setRevealModal] = useState<{
+    label: string; real: string; masked: string;
+  } | null>(null);
+  // Track which fields are revealed per item key
+  const [revealedKeys, setRevealedKeys] = useState<Set<string>>(new Set());
+
   const activeEntity = entities.find(e => e.id === selectedId) || entities[0];
+
+  const requestReveal = (real: string, label: string, itemKey: string, maskFn: (v: string) => string) => {
+    // Store itemKey so we can mark it revealed on confirm
+    setRevealModal({ label, real, masked: maskFn(real) });
+    // store itemKey reference for confirm
+    pendingRevealKey.current = itemKey;
+  };
+  const pendingRevealKey = { current: '' };
+
+  const confirmReveal = (reason: string) => {
+    const key = pendingRevealKey.current;
+    setRevealedKeys(prev => new Set([...prev, key]));
+
+    // Auto-hide after 15s
+    setTimeout(() => {
+      setRevealedKeys(prev => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+    }, 15000);
+
+    // Append to audit log
+    if (onAddAuditLog && session) {
+      onAddAuditLog({
+        analyst: session.user.displayName,
+        role: session.user.role,
+        action: 'SENSITIVE_DATA_ACCESS',
+        resource: `${activeEntity?.name} (${revealModal?.label})`,
+        hash: '',
+        prevHash: '',
+      });
+    }
+  };
+
+  const mkKey = (entity: EntityDNA, type: string, val: string) => `${entity.id}:${type}:${val}`;
 
   return (
     <div className="flex-1 flex gap-4 h-full overflow-hidden">
-      {/* Left List of Suspect Profiles */}
+      {/* Left List */}
       <div className="w-80 bg-[#1b1f2c] border border-[#3c494b]/20 rounded-lg flex flex-col overflow-hidden shrink-0">
         <div className="p-4 border-b border-[#3c494b]/30 bg-[#172034] font-title-lg text-[15px] text-[#dfe2f4] flex justify-between items-center">
           <span>Entity DNA Profiles</span>
@@ -32,7 +226,6 @@ export const EntityDnaView = ({
             {entities.length} TARGETS
           </span>
         </div>
-
         <div className="flex-1 overflow-y-auto p-2 space-y-2">
           {entities.map((ent) => {
             const isSelected = ent.id === selectedId;
@@ -53,7 +246,6 @@ export const EntityDnaView = ({
                     {ent.name.charAt(0)}
                   </div>
                 )}
-
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <h4 className="font-body-md text-body-md font-semibold text-[#dfe2f4] truncate">{ent.name}</h4>
@@ -68,7 +260,7 @@ export const EntityDnaView = ({
         </div>
       </div>
 
-      {/* Right Detailed 360 Dossier */}
+      {/* Right Dossier */}
       {activeEntity && (
         <div className="flex-1 bg-[#1b1f2c] border border-[#3c494b]/20 rounded-lg overflow-y-auto p-6 space-y-6">
           {/* Dossier Header */}
@@ -81,7 +273,6 @@ export const EntityDnaView = ({
                   {activeEntity.name.charAt(0)}
                 </div>
               )}
-
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="px-2.5 py-0.5 rounded bg-[#93000a]/20 text-[#ffb4ab] border border-[#93000a]/50 font-label-caps text-[10px] font-bold">
@@ -95,7 +286,6 @@ export const EntityDnaView = ({
                 </p>
               </div>
             </div>
-
             <div className="flex gap-2">
               {onOpenGraphForEntity && (
                 <button
@@ -137,54 +327,147 @@ export const EntityDnaView = ({
             </div>
           </div>
 
-          {/* Identifiers Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Phone Numbers */}
-            <div className="p-4 rounded bg-[#171b28] border border-[#3c494b]/30 space-y-2">
-              <h5 className="font-label-caps text-[10px] text-[#6dedff] flex items-center gap-1">
-                <span className="material-symbols-outlined text-[16px]">call</span>
-                LINKED PHONE NUMBERS ({activeEntity.phoneNumbers.length})
-              </h5>
-              <div className="space-y-1">
-                {activeEntity.phoneNumbers.map((ph) => (
-                  <div key={ph} className="p-2 rounded bg-[#1b1f2c] border border-[#3c494b]/20 font-code-sm text-[12px] text-[#dfe2f4]">
-                    {ph}
-                  </div>
-                ))}
-              </div>
+          {/* Sensitive Identifiers with masking */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="material-symbols-outlined text-[16px] text-amber-400">shield_lock</span>
+              <h4 className="font-label-caps text-[10px] text-amber-400 tracking-widest font-bold">PROTECTED IDENTIFIERS</h4>
+              <span className="font-code-sm text-[10px] text-[#859396]">— masked by default. Click 👁 to reveal.</span>
             </div>
-
-            {/* Bank Accounts */}
-            <div className="p-4 rounded bg-[#171b28] border border-[#3c494b]/30 space-y-2">
-              <h5 className="font-label-caps text-[10px] text-[#e7d3ff] flex items-center gap-1">
-                <span className="material-symbols-outlined text-[16px]">account_balance</span>
-                BANK ACCOUNTS ({activeEntity.bankAccounts.length})
-              </h5>
-              <div className="space-y-1">
-                {activeEntity.bankAccounts.map((acc) => (
-                  <div key={acc} className="p-2 rounded bg-[#1b1f2c] border border-[#3c494b]/20 font-code-sm text-[12px] text-[#dfe2f4]">
-                    {acc}
-                  </div>
-                ))}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Phone Numbers */}
+              <div className="p-4 rounded bg-[#171b28] border border-[#3c494b]/30 space-y-2">
+                <h5 className="font-label-caps text-[10px] text-[#6dedff] flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[16px]">call</span>
+                  LINKED PHONES ({activeEntity.phoneNumbers.length})
+                </h5>
+                <div className="space-y-1.5">
+                  {activeEntity.phoneNumbers.map((ph) => {
+                    const key = mkKey(activeEntity, 'phone', ph);
+                    const isRevealed = revealedKeys.has(key);
+                    return (
+                      <div key={ph} className="p-2 rounded bg-[#1b1f2c] border border-[#3c494b]/20 flex items-center justify-between gap-2">
+                        {isRevealed ? (
+                          <span className="font-code-sm text-[12px] text-emerald-400">{ph}</span>
+                        ) : (
+                          <span className="font-code-sm text-[12px] text-amber-300/80">{maskPhone(ph)}</span>
+                        )}
+                        {!isRevealed && (
+                          <button
+                            onClick={() => {
+                              pendingRevealKey.current = key;
+                              setRevealModal({ label: 'Phone Number', real: ph, masked: maskPhone(ph) });
+                            }}
+                            className="shrink-0 text-[#859396] hover:text-amber-400 transition-colors cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">visibility</span>
+                          </button>
+                        )}
+                        {isRevealed && <span className="material-symbols-outlined text-[14px] text-emerald-400 shrink-0">check_circle</span>}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
 
-            {/* Locations */}
-            <div className="p-4 rounded bg-[#171b28] border border-[#3c494b]/30 space-y-2">
-              <h5 className="font-label-caps text-[10px] text-[#36d9ed] flex items-center gap-1">
-                <span className="material-symbols-outlined text-[16px]">location_on</span>
-                GEO FOOTPRINT ({activeEntity.knownLocations.length})
-              </h5>
-              <div className="space-y-1">
-                {activeEntity.knownLocations.map((loc) => (
-                  <div key={loc} className="p-2 rounded bg-[#1b1f2c] border border-[#3c494b]/20 font-body-sm text-[12px] text-[#dfe2f4]">
-                    {loc}
-                  </div>
-                ))}
+              {/* Bank Accounts */}
+              <div className="p-4 rounded bg-[#171b28] border border-[#3c494b]/30 space-y-2">
+                <h5 className="font-label-caps text-[10px] text-[#e7d3ff] flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[16px]">account_balance</span>
+                  BANK ACCOUNTS ({activeEntity.bankAccounts.length})
+                </h5>
+                <div className="space-y-1.5">
+                  {activeEntity.bankAccounts.map((acc) => {
+                    const key = mkKey(activeEntity, 'bank', acc);
+                    const isRevealed = revealedKeys.has(key);
+                    return (
+                      <div key={acc} className="p-2 rounded bg-[#1b1f2c] border border-[#3c494b]/20 flex items-center justify-between gap-2">
+                        {isRevealed ? (
+                          <span className="font-code-sm text-[12px] text-emerald-400">{acc}</span>
+                        ) : (
+                          <span className="font-code-sm text-[12px] text-amber-300/80">{maskBank(acc)}</span>
+                        )}
+                        {!isRevealed && (
+                          <button
+                            onClick={() => {
+                              pendingRevealKey.current = key;
+                              setRevealModal({ label: 'Bank Account', real: acc, masked: maskBank(acc) });
+                            }}
+                            className="shrink-0 text-[#859396] hover:text-amber-400 transition-colors cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">visibility</span>
+                          </button>
+                        )}
+                        {isRevealed && <span className="material-symbols-outlined text-[14px] text-emerald-400 shrink-0">check_circle</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* UPI IDs */}
+              <div className="p-4 rounded bg-[#171b28] border border-[#3c494b]/30 space-y-2">
+                <h5 className="font-label-caps text-[10px] text-[#36d9ed] flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[16px]">payments</span>
+                  UPI IDs ({activeEntity.upiIds.length})
+                </h5>
+                <div className="space-y-1.5">
+                  {activeEntity.upiIds.map((upi) => {
+                    const key = mkKey(activeEntity, 'upi', upi);
+                    const isRevealed = revealedKeys.has(key);
+                    return (
+                      <div key={upi} className="p-2 rounded bg-[#1b1f2c] border border-[#3c494b]/20 flex items-center justify-between gap-2">
+                        {isRevealed ? (
+                          <span className="font-code-sm text-[12px] text-emerald-400">{upi}</span>
+                        ) : (
+                          <span className="font-code-sm text-[12px] text-amber-300/80">{maskUpi(upi)}</span>
+                        )}
+                        {!isRevealed && (
+                          <button
+                            onClick={() => {
+                              pendingRevealKey.current = key;
+                              setRevealModal({ label: 'UPI ID', real: upi, masked: maskUpi(upi) });
+                            }}
+                            className="shrink-0 text-[#859396] hover:text-amber-400 transition-colors cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">visibility</span>
+                          </button>
+                        )}
+                        {isRevealed && <span className="material-symbols-outlined text-[14px] text-emerald-400 shrink-0">check_circle</span>}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Geo Footprint */}
+          <div className="p-4 rounded bg-[#171b28] border border-[#3c494b]/30 space-y-2">
+            <h5 className="font-label-caps text-[10px] text-[#36d9ed] flex items-center gap-1">
+              <span className="material-symbols-outlined text-[16px]">location_on</span>
+              GEO FOOTPRINT ({activeEntity.knownLocations.length} locations)
+            </h5>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5">
+              {activeEntity.knownLocations.map((loc) => (
+                <div key={loc} className="p-2 rounded bg-[#1b1f2c] border border-[#3c494b]/20 font-body-sm text-[12px] text-[#dfe2f4]">
+                  {loc}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
+      )}
+
+      {/* Reveal Modal */}
+      {revealModal && (
+        <RevealModal
+          label={revealModal.label}
+          maskedValue={revealModal.masked}
+          realValue={revealModal.real}
+          onConfirm={confirmReveal}
+          onClose={() => setRevealModal(null)}
+        />
       )}
     </div>
   );
