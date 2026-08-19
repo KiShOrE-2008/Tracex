@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Sidebar } from './components/Sidebar';
 import type { NavTab } from './components/Sidebar';
 import { Header } from './components/Header';
@@ -12,6 +12,9 @@ import { EntityDnaView } from './components/EntityDnaView';
 import { CopilotView } from './components/CopilotView';
 import { ReportsView } from './components/ReportsView';
 import { AuditLogView } from './components/AuditLogView';
+import { AlertsView } from './components/AlertsView';
+import { CorrelationView } from './components/CorrelationView';
+import { SocialMediaView } from './components/SocialMediaView';
 import { FileMetadataModal } from './components/FileMetadataModal';
 import { NewCaseModal } from './components/NewCaseModal';
 
@@ -23,7 +26,10 @@ import {
   MOCK_TIMELINE_EVENTS,
   MOCK_FINANCIAL_TXNS,
   MOCK_ENTITY_DNA,
-  MOCK_AUDIT_LOGS
+  MOCK_AUDIT_LOGS,
+  MOCK_ALERTS,
+  MOCK_CORRELATIONS,
+  MOCK_SOCIAL_POSTS
 } from './data/mockForensicData';
 
 import type { EvidenceFile } from './types/forensic';
@@ -32,13 +38,17 @@ export function App() {
   const [activeTab, setActiveTab] = useState<NavTab>('overview');
   const [currentCaseId, setCurrentCaseId] = useState<string>('PN-2026-001');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  
+
   // Data States
   const [evidenceFiles, setEvidenceFiles] = useState<EvidenceFile[]>(INITIAL_EVIDENCE_FILES);
+  const alerts = MOCK_ALERTS;
   const [selectedFileForMetadata, setSelectedFileForMetadata] = useState<EvidenceFile | null>(null);
   const [isNewCaseModalOpen, setIsNewCaseModalOpen] = useState<boolean>(false);
   const [targetEntityForDna, setTargetEntityForDna] = useState<string | undefined>(undefined);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Derived: active (not dismissed) alert count for sidebar badge
+  const alertCount = useMemo(() => alerts.filter(a => !a.isDismissed).length, [alerts]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -76,18 +86,21 @@ export function App() {
   };
 
   const tabLabels: Record<NavTab, string> = {
-    overview: 'Overview Dashboard',
-    evidence: 'Evidence Vault & Ingestion Queue',
-    processing: 'Processing Pipeline',
-    graph: 'Entity Link Analysis Canvas',
-    map: 'Geospatial Cell Tower Mapping',
-    timeline: 'Chronological Event Stream',
-    finance: 'Financial Flow & Money Trail',
-    entity_dna: 'Entity DNA 360 Profiler',
-    copilot: 'AI Forensic Copilot Assistant',
-    reports: 'Court-Ready Section 65B Reports',
-    audit_log: 'Immutable Audit Log & Hash Chain',
-    settings: 'Workspace Configuration'
+    overview:     'Investigation Overview Dashboard',
+    evidence:     'Evidence Vault & Ingestion Queue',
+    processing:   'Processing Pipeline',
+    graph:        'Entity Link Analysis Canvas',
+    map:          'Geospatial Cell Tower Mapping',
+    timeline:     'Chronological Event Stream',
+    finance:      'Financial Flow & Money Trail',
+    entity_dna:   'Entity DNA 360° Profiler',
+    copilot:      'AI Forensic Copilot Assistant',
+    reports:      'Court-Ready Section 65B Reports',
+    audit_log:    'Immutable Audit Log & Hash Chain',
+    settings:     'Workspace Configuration',
+    alerts:       'Anomaly Detection — Alert Center',
+    correlation:  'Cross-Domain Correlation Engine',
+    social_media: 'Social Media Intelligence',
   };
 
   return (
@@ -98,6 +111,7 @@ export function App() {
         setActiveTab={setActiveTab}
         onOpenNewCaseModal={() => setIsNewCaseModalOpen(true)}
         evidenceCount={evidenceFiles.length}
+        alertCount={alertCount}
       />
 
       {/* Main Content Area */}
@@ -113,10 +127,12 @@ export function App() {
 
         {/* Dynamic Canvas Container */}
         <main className="flex-1 overflow-y-auto p-6 flex flex-col print:p-0 print:overflow-visible print:bg-white print:block print:w-full">
+
           {activeTab === 'overview' && (
             <OverviewView
               onNavigateTab={(tab) => setActiveTab(tab)}
               fileCount={evidenceFiles.length}
+              alertCount={alertCount}
             />
           )}
 
@@ -130,10 +146,11 @@ export function App() {
             />
           )}
 
-          {(activeTab === 'processing') && (
+          {activeTab === 'processing' && (
             <OverviewView
               onNavigateTab={(tab) => setActiveTab(tab)}
               fileCount={evidenceFiles.length}
+              alertCount={alertCount}
             />
           )}
 
@@ -175,6 +192,28 @@ export function App() {
 
           {activeTab === 'audit_log' && (
             <AuditLogView logs={MOCK_AUDIT_LOGS} />
+          )}
+
+          {/* NEW TABS */}
+          {activeTab === 'alerts' && (
+            <AlertsView
+              alerts={alerts}
+              onNavigateTab={(tab) => setActiveTab(tab as NavTab)}
+            />
+          )}
+
+          {activeTab === 'correlation' && (
+            <CorrelationView
+              correlations={MOCK_CORRELATIONS}
+              onNavigateTab={(tab) => setActiveTab(tab as NavTab)}
+            />
+          )}
+
+          {activeTab === 'social_media' && (
+            <SocialMediaView
+              posts={MOCK_SOCIAL_POSTS}
+              onNavigateTab={(tab) => setActiveTab(tab as NavTab)}
+            />
           )}
 
           {activeTab === 'settings' && (

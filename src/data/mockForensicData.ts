@@ -1,4 +1,4 @@
-import type { EvidenceFile, GraphNode, GraphEdge, TowerPing, TimelineEvent, FinancialTxn, EntityDNA, AuditLogItem } from '../types/forensic';
+import type { EvidenceFile, GraphNode, GraphEdge, TowerPing, TimelineEvent, FinancialTxn, EntityDNA, AuditLogItem, AlertItem, CorrelationLink, SocialPost } from '../types/forensic';
 
 export const INITIAL_EVIDENCE_FILES: EvidenceFile[] = [
   {
@@ -375,3 +375,402 @@ export const MOCK_AUDIT_LOGS: AuditLogItem[] = [
   { id: 'LOG-8804', timestamp: '2026-08-18 11:05:40', analyst: 'Forensic Analyst K. Mehta', action: 'TOWER_CO_LOCATION_QUERY', resource: 'Sector 43 ISBT Cell Site', hash: '1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b', ipAddress: '10.240.12.88' },
   { id: 'LOG-8805', timestamp: '2026-08-18 12:30:00', analyst: 'SSP Cyber Cell (Admin)', action: 'REPORT_EXPORT', resource: 'Operation_Shadow_Court_Report.pdf', hash: '9b8a7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b', ipAddress: '10.240.10.01' }
 ];
+
+export const MOCK_ALERTS: AlertItem[] = [
+  {
+    id: 'ALT-001',
+    severity: 'CRITICAL',
+    category: 'CDR',
+    title: 'Burner SIM Cluster Detected — 14 Activations in 72 hrs',
+    body: 'Target A (+91 98765 43210) has been linked to 14 SIM activations using synthetic Aadhaar IDs over 72 hours. Pattern consistent with large-scale OTP fraud infrastructure.',
+    timestamp: '2026-08-17 01:42:00',
+    relatedEntities: ['Vikram Sharma', '+91 98765 43210'],
+    isDismissed: false,
+    navigateTo: 'graph'
+  },
+  {
+    id: 'ALT-002',
+    severity: 'CRITICAL',
+    category: 'BANK',
+    title: 'Offshore Wire: Rs 25,00,000 via RTGS to UAE Shell Entity',
+    body: 'HDFC Account ...8921 (Apex Trading Ltd) executed an RTGS transfer of Rs 25,00,000 to Apex Trading UAE FZE at 03:05 AM — 51 minutes after verified co-location event at Sector 43 ISBT.',
+    timestamp: '2026-08-17 03:05:40',
+    relatedEntities: ['Apex Trading Ltd', 'HDFC ...8921'],
+    isDismissed: false,
+    navigateTo: 'finance'
+  },
+  {
+    id: 'ALT-003',
+    severity: 'CRITICAL',
+    category: 'GEO',
+    title: 'Co-Location Match: Vikram Sharma & Rajesh Verma @ 02:14 AM',
+    body: 'Simultaneous cell pings on CHD-4301-A and CHD-4301-B place both suspects within 120 meters at Sector 43 ISBT at 02:14 AM. A direct call followed within 4 minutes.',
+    timestamp: '2026-08-17 02:14:05',
+    relatedEntities: ['Vikram Sharma', 'Rajesh Verma', 'Cell Site #4301'],
+    isDismissed: false,
+    navigateTo: 'map'
+  },
+  {
+    id: 'ALT-004',
+    severity: 'HIGH',
+    category: 'UPI',
+    title: 'Structuring Pattern: 42 Micro-Deposits Under ₹10,000 Threshold',
+    body: '42 individual UPI payments each just below the ₹10,000 reporting threshold were received into apex.trading@icici within a 10-minute window, totaling ₹4,11,600.',
+    timestamp: '2026-08-17 09:12:00',
+    relatedEntities: ['apex.trading@icici', 'Apex Trading Ltd'],
+    isDismissed: false,
+    navigateTo: 'finance'
+  },
+  {
+    id: 'ALT-005',
+    severity: 'HIGH',
+    category: 'IP',
+    title: 'Unauthorized Net-Banking Session via ProtonVPN Exit Node',
+    body: 'IPDR logs show HDFC net-banking login from 185.220.101.5 (ProtonVPN Frankfurt exit) at 03:00 AM — 5 minutes before RTGS transaction. Source MSISDN: +91 91234 56789.',
+    timestamp: '2026-08-17 03:00:15',
+    relatedEntities: ['Rajesh Verma', '185.220.101.5', 'HDFC ...8921'],
+    isDismissed: false,
+    navigateTo: 'graph'
+  },
+  {
+    id: 'ALT-006',
+    severity: 'HIGH',
+    category: 'SOCIAL',
+    title: 'Coded Directive Detected on Instagram DM — Sector 43 Reference',
+    body: 'Account @shadow01 sent a direct message: "Meet at sector 43 near ISBT, bring the bag, V will be there". NLP classification: HIGH-RISK COORDINATION. Timestamp matches tower co-location.',
+    timestamp: '2026-08-17 01:58:33',
+    relatedEntities: ['@shadow01', 'Vikram Sharma', '@master_v'],
+    isDismissed: false,
+    navigateTo: 'social_media'
+  },
+  {
+    id: 'ALT-007',
+    severity: 'HIGH',
+    category: 'CDR',
+    title: 'Night Call Cluster: 47 Calls Between 01:00–04:00 AM in 10 Days',
+    body: 'CDR analysis shows 47 calls between +91 98765 43210 and +91 91234 56789 exclusively in the 01:00–04:00 AM window over the past 10 days. Operational security pattern.',
+    timestamp: '2026-08-17 03:55:00',
+    relatedEntities: ['+91 98765 43210', '+91 91234 56789'],
+    isDismissed: false,
+    navigateTo: 'timeline'
+  },
+  {
+    id: 'ALT-008',
+    severity: 'MEDIUM',
+    category: 'BANK',
+    title: 'Round-Trip Transfer Pattern: Apex Trading → Vikram → Apex',
+    body: 'Rs 8,50,000 transferred from Apex Trading to vikram.sharma@paytm, then Rs 8,20,000 returned within 6 hours via IMPS. Classic round-trip laundering signature.',
+    timestamp: '2026-08-14 14:22:10',
+    relatedEntities: ['Vikram Sharma', 'Apex Trading Ltd'],
+    isDismissed: false,
+    navigateTo: 'finance'
+  },
+  {
+    id: 'ALT-009',
+    severity: 'MEDIUM',
+    category: 'GEO',
+    title: 'Ananya Gupta at Mohali Phase 7 During Cash Drop Window',
+    body: 'Tower pings show Ananya Gupta (Director, Apex Trading) at Mohali Phase 7 Industrial Area for 2,400 seconds on the same morning as the verified ATM cash-out by Rajesh Verma.',
+    timestamp: '2026-08-17 11:45:00',
+    relatedEntities: ['Ananya Gupta', 'MOH-0701-A'],
+    isDismissed: false,
+    navigateTo: 'map'
+  },
+  {
+    id: 'ALT-010',
+    severity: 'MEDIUM',
+    category: 'SOCIAL',
+    title: 'Shared Social Account Cluster — 3 Suspects, 1 Common IP',
+    body: 'Instagram accounts @shadow01, @master_v, and @ananya.k all logged in from IP 103.24.88.12 within the same 3-hour window, suggesting shared infrastructure or coordinated access.',
+    timestamp: '2026-08-16 22:15:00',
+    relatedEntities: ['@shadow01', '@master_v', '@ananya.k'],
+    isDismissed: false,
+    navigateTo: 'social_media'
+  },
+  {
+    id: 'ALT-011',
+    severity: 'MEDIUM',
+    category: 'IP',
+    title: 'Repeated VPN Session to Same Crypto Exchange',
+    body: 'IPDR shows 5 separate VPN sessions from MSISDN +91 91234 56789 connecting to Binance API endpoints between Aug 14–17, correlating with post-transfer timing.',
+    timestamp: '2026-08-17 05:22:00',
+    relatedEntities: ['Rajesh Verma', '185.220.101.5'],
+    isDismissed: false,
+    navigateTo: 'graph'
+  },
+  {
+    id: 'ALT-012',
+    severity: 'LOW',
+    category: 'CDR',
+    title: 'Anomalous Silence: 48-hr Call Blackout After Wire Transfer',
+    body: 'Following the Rs 25L RTGS transfer, all three suspects showed zero call activity for 48 hours — a known counter-surveillance pattern used by organized crime syndicates.',
+    timestamp: '2026-08-19 03:00:00',
+    relatedEntities: ['Vikram Sharma', 'Rajesh Verma', 'Ananya Gupta'],
+    isDismissed: false,
+    navigateTo: 'timeline'
+  }
+];
+
+export const MOCK_CORRELATIONS: CorrelationLink[] = [
+  {
+    id: 'COR-01',
+    entityA: 'Vikram "Shadow" Sharma',
+    entityB: 'Rajesh Verma',
+    score: 91,
+    verdict: 'VERY HIGH',
+    evidenceSources: [
+      { channel: 'CDR',    label: '142 direct calls over 10 days',              count: 142, navigateTo: 'timeline'       },
+      { channel: 'GEO',    label: '3 tower co-location events (night window)',   count: 3,   navigateTo: 'map'            },
+      { channel: 'UPI',    label: '₹85,000 UPI transfer via Paytm',             count: 1,   amount: 85000, navigateTo: 'finance' },
+      { channel: 'IP',     label: 'Shared IP session (ProtonVPN, 03:00 AM)',    count: 1,   navigateTo: 'graph'          },
+      { channel: 'SOCIAL', label: 'Direct Instagram coordination message',      count: 1,   navigateTo: 'social_media'   }
+    ]
+  },
+  {
+    id: 'COR-02',
+    entityA: 'Vikram "Shadow" Sharma',
+    entityB: 'Ananya Gupta',
+    score: 78,
+    verdict: 'HIGH',
+    evidenceSources: [
+      { channel: 'BANK',   label: 'Co-signatory on Apex Trading HDFC account',  count: 1,   navigateTo: 'finance'       },
+      { channel: 'CDR',    label: '38 calls (mainly business hours)',            count: 38,  navigateTo: 'timeline'      },
+      { channel: 'UPI',    label: '₹9,80,000 via apex.trading@icici',           count: 12,  amount: 980000, navigateTo: 'finance' },
+      { channel: 'GEO',    label: 'Co-located at Panchkula Sector 5 (once)',    count: 1,   navigateTo: 'map'           }
+    ]
+  },
+  {
+    id: 'COR-03',
+    entityA: 'Rajesh Verma',
+    entityB: 'Ananya Gupta',
+    score: 64,
+    verdict: 'HIGH',
+    evidenceSources: [
+      { channel: 'GEO',    label: 'Co-located at Mohali Phase 7 (twice)',        count: 2,   navigateTo: 'map'           },
+      { channel: 'CDR',    label: '21 calls via Jio burner SIM',                 count: 21,  navigateTo: 'timeline'      },
+      { channel: 'BANK',   label: '₹2,00,000 ATM withdrawal same day as wire',  count: 1,   amount: 200000, navigateTo: 'finance' }
+    ]
+  },
+  {
+    id: 'COR-04',
+    entityA: 'Vikram "Shadow" Sharma',
+    entityB: 'Apex Trading Ltd (HDFC ...8921)',
+    score: 97,
+    verdict: 'VERY HIGH',
+    evidenceSources: [
+      { channel: 'BANK',   label: '₹1.85 Cr total inflow / outflow managed',    count: 89,  amount: 18500000, navigateTo: 'finance' },
+      { channel: 'UPI',    label: 'Directly controls apex.trading@icici VPA',    count: 1,   navigateTo: 'finance'       },
+      { channel: 'CDR',    label: 'Calls before and after every major transfer', count: 22,  navigateTo: 'timeline'      },
+      { channel: 'IP',     label: 'Net-banking logins from Vikram\'s IPDR range',count: 5,   navigateTo: 'graph'         }
+    ]
+  },
+  {
+    id: 'COR-05',
+    entityA: 'Rajesh Verma',
+    entityB: '185.220.101.5 (ProtonVPN)',
+    score: 82,
+    verdict: 'VERY HIGH',
+    evidenceSources: [
+      { channel: 'IP',     label: '5 IPDR sessions, always post-transfer',       count: 5,   navigateTo: 'graph'         },
+      { channel: 'CDR',    label: 'MSISDN matched to source session',            count: 5,   navigateTo: 'timeline'      },
+      { channel: 'BANK',   label: 'Unauthorized net-banking access via this IP', count: 1,   navigateTo: 'finance'       }
+    ]
+  },
+  {
+    id: 'COR-06',
+    entityA: '@shadow01 (Instagram)',
+    entityB: 'Vikram "Shadow" Sharma',
+    score: 89,
+    verdict: 'VERY HIGH',
+    evidenceSources: [
+      { channel: 'SOCIAL', label: 'Account registered to Vikram\'s phone number',count: 1,   navigateTo: 'social_media'  },
+      { channel: 'IP',     label: 'Login IP matches IPDR for +91 98765 43210',   count: 3,   navigateTo: 'graph'         },
+      { channel: 'CDR',    label: 'DM timestamps align with 14 CDR events',      count: 14,  navigateTo: 'timeline'      },
+      { channel: 'GEO',    label: 'App GPS embedded in media post metadata',     count: 2,   navigateTo: 'map'           }
+    ]
+  }
+];
+
+export const MOCK_SOCIAL_POSTS: SocialPost[] = [
+  {
+    id: 'SP-001',
+    platform: 'Instagram',
+    author: 'Vikram Sharma',
+    handle: '@shadow01',
+    text: 'Meet at sector 43 near ISBT, bring the bag, V will be there. No calls. DM only.',
+    timestamp: '2026-08-17 01:58:33',
+    sentiment: 'SUSPICIOUS',
+    mentionedEntities: ['@master_v', 'Rajesh Verma'],
+    linkedIp: '103.24.88.12',
+    evidenceId: 'SOCIAL-001',
+    location: 'Sector 43, Chandigarh'
+  },
+  {
+    id: 'SP-002',
+    platform: 'Instagram',
+    author: 'Vikram Sharma',
+    handle: '@shadow01',
+    text: 'Package cleared ✅ Drop confirmed at Mohali point. Next batch ready by Friday.',
+    timestamp: '2026-08-17 04:30:00',
+    sentiment: 'SUSPICIOUS',
+    mentionedEntities: ['@ananya.k'],
+    linkedIp: '103.24.88.12',
+    evidenceId: 'SOCIAL-002'
+  },
+  {
+    id: 'SP-003',
+    platform: 'Twitter',
+    author: 'Rajesh Verma',
+    handle: '@raju_op99',
+    text: 'Out of office this week. Handling some personal logistics in Mohali. DMs open for biz.',
+    timestamp: '2026-08-16 18:10:00',
+    sentiment: 'ALERT',
+    mentionedEntities: [],
+    linkedIp: '103.24.88.55',
+    evidenceId: 'SOCIAL-003'
+  },
+  {
+    id: 'SP-004',
+    platform: 'WhatsApp',
+    author: 'Vikram Sharma',
+    handle: 'Master V (919876543210)',
+    text: 'Clear the cash box before 4 PM. Transfer 10L to Mohali drop point. Delete this after.',
+    timestamp: '2026-08-17 10:30:15',
+    sentiment: 'SUSPICIOUS',
+    mentionedEntities: ['Rajesh Verma'],
+    evidenceId: 'SOCIAL-004'
+  },
+  {
+    id: 'SP-005',
+    platform: 'Instagram',
+    author: 'Ananya Gupta',
+    handle: '@ananya.k',
+    text: 'Board meeting done ✨ Exciting new partnership with Apex Group starting next quarter!',
+    timestamp: '2026-08-15 14:22:00',
+    sentiment: 'ALERT',
+    mentionedEntities: ['@shadow01'],
+    linkedIp: '103.24.88.12',
+    evidenceId: 'SOCIAL-005',
+    location: 'Panchkula'
+  },
+  {
+    id: 'SP-006',
+    platform: 'Instagram',
+    author: 'Vikram Sharma',
+    handle: '@shadow01',
+    text: 'New account setup done. Tell everyone to move to the new VPA from tomorrow. Old one goes dark.',
+    timestamp: '2026-08-14 22:05:00',
+    sentiment: 'SUSPICIOUS',
+    mentionedEntities: ['@raju_op99', '@ananya.k'],
+    linkedIp: '103.24.88.12',
+    evidenceId: 'SOCIAL-006'
+  },
+  {
+    id: 'SP-007',
+    platform: 'Twitter',
+    author: 'Rajesh Verma',
+    handle: '@raju_op99',
+    text: 'Sector 17 ✅ Sector 43 ✅ Phase 7 ✅ All stops done. Good day.',
+    timestamp: '2026-08-17 06:15:00',
+    sentiment: 'ALERT',
+    mentionedEntities: [],
+    linkedIp: '103.24.88.55',
+    evidenceId: 'SOCIAL-007'
+  },
+  {
+    id: 'SP-008',
+    platform: 'WhatsApp',
+    author: 'Ananya Gupta',
+    handle: 'Ananya (919789012345)',
+    text: 'Paperwork signed. The account is live. Approvals through. Send me the transfer refs.',
+    timestamp: '2026-08-13 11:40:00',
+    sentiment: 'SUSPICIOUS',
+    mentionedEntities: ['Vikram Sharma'],
+    evidenceId: 'SOCIAL-008'
+  },
+  {
+    id: 'SP-009',
+    platform: 'Instagram',
+    author: 'Vikram Sharma',
+    handle: '@shadow01',
+    text: 'भाई काम हो गया। अब चुप रहो सब। 3 दिन कोई connection नहीं। (Work done. All stay silent. No contact for 3 days.)',
+    timestamp: '2026-08-17 05:50:00',
+    sentiment: 'SUSPICIOUS',
+    mentionedEntities: ['@master_v'],
+    linkedIp: '103.24.88.12',
+    evidenceId: 'SOCIAL-009'
+  },
+  {
+    id: 'SP-010',
+    platform: 'Instagram',
+    author: 'Rajesh Verma',
+    handle: '@master_v',
+    text: 'Roger that. Going dark. Will ping when clear.',
+    timestamp: '2026-08-17 05:55:00',
+    sentiment: 'SUSPICIOUS',
+    mentionedEntities: ['@shadow01'],
+    linkedIp: '103.24.88.55',
+    evidenceId: 'SOCIAL-010'
+  },
+  {
+    id: 'SP-011',
+    platform: 'Twitter',
+    author: 'Ananya Gupta',
+    handle: '@ananya.k',
+    text: 'Proud to announce Apex Trading International expansion into UAE and Singapore markets! #Business #Growth',
+    timestamp: '2026-08-10 09:00:00',
+    sentiment: 'ALERT',
+    mentionedEntities: [],
+    linkedIp: '103.24.88.20',
+    evidenceId: 'SOCIAL-011'
+  },
+  {
+    id: 'SP-012',
+    platform: 'WhatsApp',
+    author: 'Vikram Sharma',
+    handle: 'Master V (919876543210)',
+    text: 'Rajesh bhai — use only new SIM from tomorrow. Old number is hot. I burned it.',
+    timestamp: '2026-08-15 23:18:00',
+    sentiment: 'SUSPICIOUS',
+    mentionedEntities: ['Rajesh Verma'],
+    evidenceId: 'SOCIAL-012'
+  },
+  {
+    id: 'SP-013',
+    platform: 'Instagram',
+    author: 'Vikram Sharma',
+    handle: '@shadow01',
+    text: 'Confirming: Rs 10L moved. Ananya to sign off on Monday. Tell her to be ready.',
+    timestamp: '2026-08-14 18:40:00',
+    sentiment: 'SUSPICIOUS',
+    mentionedEntities: ['@ananya.k'],
+    linkedIp: '103.24.88.12',
+    evidenceId: 'SOCIAL-013'
+  },
+  {
+    id: 'SP-014',
+    platform: 'Twitter',
+    author: 'Rajesh Verma',
+    handle: '@raju_op99',
+    text: 'Anyone need bulk SIM connections for their business? 50+ available. DM me. No KYC hassle.',
+    timestamp: '2026-08-12 14:55:00',
+    sentiment: 'SUSPICIOUS',
+    mentionedEntities: [],
+    linkedIp: '103.24.88.55',
+    evidenceId: 'SOCIAL-014'
+  },
+  {
+    id: 'SP-015',
+    platform: 'Instagram',
+    author: 'Ananya Gupta',
+    handle: '@ananya.k',
+    text: 'Travel update — Panchkula → Mohali → Chandigarh all in one day 😅 Busy week!',
+    timestamp: '2026-08-17 12:10:00',
+    sentiment: 'ALERT',
+    mentionedEntities: [],
+    linkedIp: '103.24.88.20',
+    evidenceId: 'SOCIAL-015',
+    location: 'Mohali'
+  }
+];
+

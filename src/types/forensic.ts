@@ -141,3 +141,54 @@ export interface AuditLogItem {
   hash: string;
   ipAddress: string;
 }
+
+// ─── New PS6 Types ────────────────────────────────────────────────────────────
+
+export type AlertSeverity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+export type AlertCategory = 'CDR' | 'BANK' | 'SOCIAL' | 'GEO' | 'IP' | 'UPI';
+
+export interface AlertItem {
+  id: string;
+  severity: AlertSeverity;
+  category: AlertCategory;
+  title: string;
+  body: string;
+  timestamp: string;
+  relatedEntities: string[];
+  isDismissed: boolean;
+  navigateTo?: string; // NavTab id to jump to
+}
+
+export interface CorrelationEvidenceSource {
+  channel: AlertCategory;
+  label: string;         // "4 CDR calls", "₹85,000 UPI transfer"
+  count: number;
+  amount?: number;
+  navigateTo?: string;   // NavTab id
+}
+
+export interface CorrelationLink {
+  id: string;
+  entityA: string;
+  entityB: string;
+  score: number; // 0 - 100
+  verdict: 'VERY HIGH' | 'HIGH' | 'MODERATE' | 'LOW';
+  evidenceSources: CorrelationEvidenceSource[];
+}
+
+export type SocialPlatform = 'Instagram' | 'Twitter' | 'WhatsApp';
+export type SocialSentiment = 'SUSPICIOUS' | 'NEUTRAL' | 'ALERT' | 'NORMAL';
+
+export interface SocialPost {
+  id: string;
+  platform: SocialPlatform;
+  author: string;
+  handle: string;
+  text: string;
+  timestamp: string;
+  sentiment: SocialSentiment;
+  mentionedEntities: string[];
+  linkedIp?: string;
+  evidenceId: string;
+  location?: string;
+}

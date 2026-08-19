@@ -1,11 +1,20 @@
 import type { FC } from 'react';
+import { MOCK_ALERTS } from '../data/mockForensicData';
 
 interface OverviewViewProps {
   onNavigateTab: (tab: any) => void;
   fileCount: number;
+  alertCount?: number;
 }
 
-export const OverviewView: FC<OverviewViewProps> = ({ onNavigateTab, fileCount }) => {
+export const OverviewView: FC<OverviewViewProps> = ({ onNavigateTab, fileCount, alertCount = 0 }) => {
+  const recentAlerts = MOCK_ALERTS.filter(a => !a.isDismissed).slice(0, 3);
+  const SEVERITY_COLORS: Record<string, string> = {
+    CRITICAL: 'text-red-300 bg-red-500/15 border-red-500/40',
+    HIGH:     'text-orange-300 bg-orange-500/15 border-orange-500/40',
+    MEDIUM:   'text-amber-300 bg-amber-500/15 border-amber-500/30',
+    LOW:      'text-sky-300 bg-sky-500/15 border-sky-500/30',
+  };
   return (
     <div className="space-y-6">
       {/* Case Header Banner */}
@@ -53,8 +62,8 @@ export const OverviewView: FC<OverviewViewProps> = ({ onNavigateTab, fileCount }
         </div>
       </div>
 
-      {/* Bento Grid: 5 Interactive Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      {/* Bento Grid: 6 Interactive Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
         {/* Card 1 */}
         <div 
           onClick={() => onNavigateTab('evidence')}
@@ -130,20 +139,35 @@ export const OverviewView: FC<OverviewViewProps> = ({ onNavigateTab, fileCount }
         >
           <div className="flex justify-between items-start">
             <div className="w-8 h-8 rounded-lg bg-[#6dedff]/20 border border-[#6dedff]/50 flex items-center justify-center text-[#6dedff] group-hover:rotate-12 transition-transform">
-              <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                warning
-              </span>
+              <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span>
             </div>
-            <div className="w-2.5 h-2.5 rounded-full bg-[#6dedff] animate-ping"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-[#6dedff] animate-ping" />
           </div>
           <div className="mt-3">
             <div className="font-headline-md text-[26px] font-bold text-[#6dedff]">12</div>
             <div className="font-label-caps text-[10px] text-[#6dedff] mt-0.5 font-bold tracking-wider">Priority Findings</div>
           </div>
         </div>
+
+        {/* Card 6 — Active Alerts */}
+        <div 
+          onClick={() => onNavigateTab('alerts')}
+          className="glass-panel-interactive p-4 rounded-xl flex flex-col justify-between group cursor-pointer relative overflow-hidden border border-red-500/30 hover:border-red-400/50"
+        >
+          <div className="flex justify-between items-start">
+            <div className="w-8 h-8 rounded-lg bg-red-500/15 border border-red-500/40 flex items-center justify-center text-red-400 group-hover:scale-110 transition-transform">
+              <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>crisis_alert</span>
+            </div>
+            <div className="w-2.5 h-2.5 rounded-full bg-red-400 animate-ping" />
+          </div>
+          <div className="mt-3">
+            <div className="font-headline-md text-[26px] font-bold text-red-300 group-hover:text-red-200 transition-colors">{alertCount}</div>
+            <div className="font-label-caps text-[10px] text-red-400 mt-0.5 font-bold tracking-wider">Active Alerts</div>
+          </div>
+        </div>
       </div>
 
-      {/* Main Content Layout: Pipeline Stepper & Findings */}
+      {/* Main Content Layout: Pipeline Stepper, Findings & Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Processing Pipeline */}
         <div className="glass-panel rounded-xl p-6 flex flex-col border border-[#6dedff]/15">
@@ -286,33 +310,55 @@ export const OverviewView: FC<OverviewViewProps> = ({ onNavigateTab, fileCount }
           </div>
 
           {/* Quick Action Navigation Bar */}
-          <div className="mt-6 pt-4 border-t border-[#3c494b]/20 flex flex-wrap items-center justify-between gap-3">
-            <span className="font-label-caps text-[10px] text-[#859396] font-bold tracking-wider">QUICK ACTIONS:</span>
+          <div className="mt-6 pt-4 border-t border-[#3c494b]/20">
+            <span className="font-label-caps text-[10px] text-[#859396] font-bold tracking-wider block mb-3">QUICK ACTIONS:</span>
             <div className="flex flex-wrap gap-2">
-              <button 
-                onClick={() => onNavigateTab('evidence')} 
-                className="px-3 py-1.5 rounded-lg bg-[#181d2f] hover:bg-[#21273d] text-[#dfe2f4] hover:text-[#6dedff] border border-[#3c494b]/30 hover:border-[#6dedff]/40 font-label-caps text-[10.5px] flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
-              >
+              <button onClick={() => onNavigateTab('evidence')} className="px-3 py-1.5 rounded-lg bg-[#181d2f] hover:bg-[#21273d] text-[#dfe2f4] hover:text-[#6dedff] border border-[#3c494b]/30 hover:border-[#6dedff]/40 font-label-caps text-[10.5px] flex items-center gap-1.5 transition-all cursor-pointer shadow-sm">
                 <span className="material-symbols-outlined text-[15px]">upload_file</span> Ingest Files
               </button>
-              <button 
-                onClick={() => onNavigateTab('graph')} 
-                className="px-3 py-1.5 rounded-lg bg-[#181d2f] hover:bg-[#21273d] text-[#dfe2f4] hover:text-[#6dedff] border border-[#3c494b]/30 hover:border-[#6dedff]/40 font-label-caps text-[10.5px] flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
-              >
-                <span className="material-symbols-outlined text-[15px]">account_tree</span> Open Link Graph
+              <button onClick={() => onNavigateTab('alerts')} className="px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-300 hover:text-red-200 border border-red-500/30 hover:border-red-400/50 font-label-caps text-[10.5px] flex items-center gap-1.5 transition-all cursor-pointer">
+                <span className="material-symbols-outlined text-[15px]">crisis_alert</span> View Alerts
               </button>
-              <button 
-                onClick={() => onNavigateTab('map')} 
-                className="px-3 py-1.5 rounded-lg bg-[#181d2f] hover:bg-[#21273d] text-[#dfe2f4] hover:text-[#6dedff] border border-[#3c494b]/30 hover:border-[#6dedff]/40 font-label-caps text-[10.5px] flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
-              >
-                <span className="material-symbols-outlined text-[15px]">map</span> Cell Tower Map
+              <button onClick={() => onNavigateTab('correlation')} className="px-3 py-1.5 rounded-lg bg-[#181d2f] hover:bg-[#21273d] text-[#dfe2f4] hover:text-[#6dedff] border border-[#3c494b]/30 hover:border-[#6dedff]/40 font-label-caps text-[10.5px] flex items-center gap-1.5 transition-all cursor-pointer shadow-sm">
+                <span className="material-symbols-outlined text-[15px]">link</span> Correlations
               </button>
-              <button 
-                onClick={() => onNavigateTab('copilot')} 
-                className="px-3 py-1.5 rounded-lg bg-[#28d2e6]/20 hover:bg-[#28d2e6]/30 border border-[#28d2e6]/50 text-[#6dedff] font-label-caps text-[10.5px] flex items-center gap-1.5 transition-all cursor-pointer shadow-[0_0_12px_rgba(40,210,230,0.2)]"
-              >
+              <button onClick={() => onNavigateTab('social_media')} className="px-3 py-1.5 rounded-lg bg-[#181d2f] hover:bg-[#21273d] text-[#dfe2f4] hover:text-purple-300 border border-[#3c494b]/30 hover:border-purple-500/40 font-label-caps text-[10.5px] flex items-center gap-1.5 transition-all cursor-pointer shadow-sm">
+                <span className="material-symbols-outlined text-[15px]">public</span> Social Intel
+              </button>
+              <button onClick={() => onNavigateTab('graph')} className="px-3 py-1.5 rounded-lg bg-[#181d2f] hover:bg-[#21273d] text-[#dfe2f4] hover:text-[#6dedff] border border-[#3c494b]/30 hover:border-[#6dedff]/40 font-label-caps text-[10.5px] flex items-center gap-1.5 transition-all cursor-pointer shadow-sm">
+                <span className="material-symbols-outlined text-[15px]">account_tree</span> Link Graph
+              </button>
+              <button onClick={() => onNavigateTab('copilot')} className="px-3 py-1.5 rounded-lg bg-[#28d2e6]/20 hover:bg-[#28d2e6]/30 border border-[#28d2e6]/50 text-[#6dedff] font-label-caps text-[10.5px] flex items-center gap-1.5 transition-all cursor-pointer shadow-[0_0_12px_rgba(40,210,230,0.2)]">
                 <span className="material-symbols-outlined text-[15px]">smart_toy</span> Ask Copilot AI
               </button>
+            </div>
+          </div>
+
+          {/* Recent Alerts Mini-Feed */}
+          <div className="mt-5 pt-4 border-t border-[#3c494b]/20">
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-label-caps text-[10px] text-[#859396] font-bold tracking-wider">RECENT ALERTS:</span>
+              <button onClick={() => onNavigateTab('alerts')} className="font-label-caps text-[10px] text-[#6dedff] hover:text-[#95f1ff] flex items-center gap-1 cursor-pointer">
+                View All <span className="material-symbols-outlined text-[13px]">arrow_forward</span>
+              </button>
+            </div>
+            <div className="space-y-2">
+              {recentAlerts.map(alert => {
+                const colorClass = SEVERITY_COLORS[alert.severity] ?? 'text-[#859396]';
+                return (
+                  <button
+                    key={alert.id}
+                    onClick={() => onNavigateTab('alerts')}
+                    className={`w-full flex items-start gap-2.5 p-2.5 rounded-lg border text-left cursor-pointer transition-all hover:opacity-80 ${colorClass}`}
+                  >
+                    <span className="material-symbols-outlined text-[14px] shrink-0 mt-0.5">crisis_alert</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-body-sm text-[11.5px] text-[#dfe2f4] font-medium truncate">{alert.title}</p>
+                      <p className="font-code-sm text-[10px] opacity-70 mt-0.5">{alert.timestamp} • {alert.severity}</p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
