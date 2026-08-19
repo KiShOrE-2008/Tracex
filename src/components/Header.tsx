@@ -16,7 +16,7 @@ export const Header: FC<HeaderProps> = ({
   activeTabLabel
 }) => {
   return (
-    <header className="flex justify-between items-center w-full px-6 h-16 bg-[#0f1322]/85 backdrop-blur-xl border-b border-[#6dedff]/15 relative z-10 shrink-0 select-none shadow-[0_4px_20px_rgba(0,0,0,0.4)]">
+    <header className="flex justify-between items-center w-full px-6 h-16 bg-[#0f1322]/85 backdrop-blur-xl border-b border-[#6dedff]/15 relative z-10 shrink-0 select-none shadow-[0_4px_20px_rgba(0,0,0,0.4)] print:hidden">
       {/* Bottom glowing line accent */}
       <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#6dedff]/30 to-transparent"></div>
 

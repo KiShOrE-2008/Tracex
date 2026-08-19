@@ -91,7 +91,7 @@ export function App() {
   };
 
   return (
-    <div className="flex h-screen bg-[#0f131f] text-[#dfe2f4] overflow-hidden selection:bg-[#28d2e6]/30 selection:text-[#6dedff]">
+    <div className="flex h-screen bg-[#0f131f] text-[#dfe2f4] overflow-hidden selection:bg-[#28d2e6]/30 selection:text-[#6dedff] print:h-auto print:bg-white print:text-black print:overflow-visible print:block">
       {/* Sidebar */}
       <Sidebar
         activeTab={activeTab}
@@ -101,7 +101,7 @@ export function App() {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-[#0f131f] relative overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 bg-[#0f131f] relative overflow-hidden print:bg-white print:overflow-visible print:block print:w-full">
         {/* Header */}
         <Header
           currentCaseId={currentCaseId}
@@ -112,7 +112,7 @@ export function App() {
         />
 
         {/* Dynamic Canvas Container */}
-        <main className="flex-1 overflow-y-auto p-6 flex flex-col">
+        <main className="flex-1 overflow-y-auto p-6 flex flex-col print:p-0 print:overflow-visible print:bg-white print:block print:w-full">
           {activeTab === 'overview' && (
             <OverviewView
               onNavigateTab={(tab) => setActiveTab(tab)}

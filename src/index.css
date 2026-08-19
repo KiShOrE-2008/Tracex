@@ -213,3 +213,88 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ==========================================
+   COURT-READY PDF & PRINT STYLES (@media print)
+   ========================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 10mm 12mm 10mm;
+  }
+
+  /* 1. Hide non-report UI elements */
+  aside,
+  header,
+  nav,
+  .print\:hidden,
+  .material-symbols-outlined {
+    display: none !important;
+  }
+
+  /* 2. Reset app containers to full-width legal page layout */
+  html,
+  body,
+  #root,
+  main,
+  div {
+    background: #ffffff !important;
+    color: #000000 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    position: static !important;
+    display: block !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* 3. High contrast text rendering */
+  p, span, h1, h2, h3, h4, h5, li, td, th, div, label {
+    color: #000000 !important;
+    background-color: transparent !important;
+    text-shadow: none !important;
+  }
+
+  /* 4. Full-width Legal Tables */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin: 10px 0 !important;
+    page-break-inside: auto !important;
+  }
+
+  th, td {
+    border: 1px solid #000000 !important;
+    padding: 6px 8px !important;
+    color: #000000 !important;
+    font-size: 9.5pt !important;
+    line-height: 1.3 !important;
+    font-family: 'JetBrains Mono', monospace, sans-serif !important;
+  }
+
+  th {
+    background-color: #f2f4f7 !important;
+    font-weight: bold !important;
+    text-transform: uppercase !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* 5. Page Break Rules */
+  .page-break {
+    page-break-before: always !important;
+  }
+
+  h1, h2, h3, h4 {
+    page-break-after: avoid !important;
+  }
+}
+
+

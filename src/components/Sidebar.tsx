@@ -43,7 +43,7 @@ export const Sidebar: FC<SidebarProps> = ({
   ];
 
   return (
-    <aside className="docked left-0 h-full w-64 border-r border-[#6dedff]/15 bg-[#0e1220]/90 backdrop-blur-xl flex flex-col py-3 z-20 shrink-0 select-none shadow-[4px_0_24px_rgba(0,0,0,0.5)] relative">
+    <aside className="docked left-0 h-full w-64 border-r border-[#6dedff]/15 bg-[#0e1220]/90 backdrop-blur-xl flex flex-col py-3 z-20 shrink-0 select-none shadow-[4px_0_24px_rgba(0,0,0,0.5)] relative print:hidden">
       {/* Subtle top light bar */}
       <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#6dedff]/60 to-transparent"></div>
 
