@@ -34,7 +34,7 @@ function verifyChain(logs: AuditLogItem[]): boolean {
   return true;
 }
 
-export const AuditLogView = ({ logs, onAppendLog }: AuditLogViewProps) => {
+export const AuditLogView = ({ logs }: AuditLogViewProps) => {
   const [filterQuery, setFilterQuery] = useState('');
   const [tamperedIdx, setTamperedIdx] = useState<number | null>(null);
   const [allLogs, setAllLogs] = useState<AuditLogItem[]>(logs);

@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import { useAuth } from '../context/AuthContext';
+import type { NavTab } from './Sidebar';
 
 interface HeaderProps {
   currentCaseId: string;
@@ -7,6 +8,8 @@ interface HeaderProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   activeTabLabel: string;
+  activeTab?: NavTab;
+  onNavigateTab?: (tab: NavTab) => void;
 }
 
 export const Header: FC<HeaderProps> = ({
@@ -14,9 +17,26 @@ export const Header: FC<HeaderProps> = ({
   onSelectCase,
   searchQuery,
   setSearchQuery,
-  activeTabLabel
+  activeTabLabel,
+  activeTab,
+  onNavigateTab
 }) => {
   const { session, logout } = useAuth();
+
+  const handleNav = (tab: NavTab) => {
+    if (onNavigateTab) {
+      onNavigateTab(tab);
+    }
+  };
+
+  const quickButtons: { id: NavTab; title: string; icon: string }[] = [
+    { id: 'evidence',    title: 'Evidence Vault', icon: 'folder' },
+    { id: 'timeline',    title: 'Timeline Events', icon: 'event' },
+    { id: 'entity_dna',  title: 'Suspect DNA Profiles', icon: 'group' },
+    { id: 'graph',       title: 'Link Graph Topology', icon: 'hub' },
+    { id: 'correlation', title: 'Cross-Domain Correlation Insights', icon: 'search_insights' },
+  ];
+
   return (
     <header className="flex justify-between items-center w-full px-6 h-16 bg-[#0f1322]/85 backdrop-blur-xl border-b border-[#6dedff]/15 relative z-10 shrink-0 select-none shadow-[0_4px_20px_rgba(0,0,0,0.4)] print:hidden">
       {/* Bottom glowing line accent */}
@@ -78,21 +98,23 @@ export const Header: FC<HeaderProps> = ({
       <div className="flex items-center gap-3">
         {/* Quick Access Badges */}
         <div className="flex items-center gap-1 bg-[#131726]/60 p-1 rounded-lg border border-[#3c494b]/20">
-          <button className="w-8 h-8 flex items-center justify-center rounded-md text-[#859396] hover:text-[#6dedff] hover:bg-[#21273d] transition-all cursor-pointer" title="Evidence Vault">
-            <span className="material-symbols-outlined text-[18px]">folder</span>
-          </button>
-          <button className="w-8 h-8 flex items-center justify-center rounded-md text-[#859396] hover:text-[#6dedff] hover:bg-[#21273d] transition-all cursor-pointer" title="Timeline Events">
-            <span className="material-symbols-outlined text-[18px]">event</span>
-          </button>
-          <button className="w-8 h-8 flex items-center justify-center rounded-md text-[#859396] hover:text-[#6dedff] hover:bg-[#21273d] transition-all cursor-pointer" title="Suspect Network">
-            <span className="material-symbols-outlined text-[18px]">group</span>
-          </button>
-          <button className="w-8 h-8 flex items-center justify-center rounded-md text-[#859396] hover:text-[#6dedff] hover:bg-[#21273d] transition-all cursor-pointer" title="Entity Topology">
-            <span className="material-symbols-outlined text-[18px]">hub</span>
-          </button>
-          <button className="w-8 h-8 flex items-center justify-center rounded-md text-[#859396] hover:text-[#6dedff] hover:bg-[#21273d] transition-all cursor-pointer" title="Forensic Insights">
-            <span className="material-symbols-outlined text-[18px]">search_insights</span>
-          </button>
+          {quickButtons.map((btn) => {
+            const isActive = activeTab === btn.id;
+            return (
+              <button
+                key={btn.id}
+                onClick={() => handleNav(btn.id)}
+                className={`w-8 h-8 flex items-center justify-center rounded-md transition-all cursor-pointer ${
+                  isActive
+                    ? 'bg-[#6dedff]/20 text-[#6dedff] border border-[#6dedff]/40 shadow-[0_0_8px_rgba(109,237,255,0.3)]'
+                    : 'text-[#859396] hover:text-[#6dedff] hover:bg-[#21273d]'
+                }`}
+                title={btn.title}
+              >
+                <span className="material-symbols-outlined text-[18px]">{btn.icon}</span>
+              </button>
+            );
+          })}
         </div>
 
         <div className="w-px h-6 bg-[#3c494b]/40 mx-0.5"></div>
@@ -100,7 +122,7 @@ export const Header: FC<HeaderProps> = ({
         {/* Analyst Info */}
         <div
           onClick={logout}
-          title="Logout"
+          title="Click to logout"
           className="flex items-center gap-2.5 px-2 py-1 rounded-lg bg-[#181d2f]/60 hover:bg-red-500/10 border border-[#3c494b]/30 hover:border-red-500/30 transition-all cursor-pointer group"
         >
           <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-[#6dedff]/40 group-hover:border-red-400/50 transition-colors shrink-0 shadow-[0_0_10px_rgba(40,210,230,0.2)] bg-gradient-to-br from-[#28d2e6]/20 to-[#6620bd]/25 flex items-center justify-center">
@@ -120,4 +142,3 @@ export const Header: FC<HeaderProps> = ({
     </header>
   );
 };
-

@@ -189,6 +189,8 @@ function Dashboard() {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           activeTabLabel={tabLabels[activeTab]}
+          activeTab={activeTab}
+          onNavigateTab={setActiveTab}
         />
 
         {/* Dynamic Canvas */}

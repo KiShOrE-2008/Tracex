@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import type { EntityDNA, AuditLogItem } from '../types/forensic';
 import { useAuth } from '../context/AuthContext';
 
@@ -53,7 +53,7 @@ const REVEAL_REASONS = [
   'Supervisor Directive',
 ];
 
-function RevealModal({ label, maskedValue, realValue, onConfirm, onClose }: RevealModalProps) {
+function RevealModal({ label, maskedValue, realValue: _realValue, onConfirm, onClose }: RevealModalProps) {
   const [reason, setReason] = useState(REVEAL_REASONS[0]);
 
   return (
@@ -104,56 +104,7 @@ function RevealModal({ label, maskedValue, realValue, onConfirm, onClose }: Reve
   );
 }
 
-// ─── Masked Field ─────────────────────────────────────────────────────────────
-interface MaskedFieldProps {
-  label: string;
-  realValue: string;
-  maskFn: (v: string) => string;
-  onReveal: (real: string, label: string) => void;
-}
-
-function MaskedField({ label, realValue, maskFn, onReveal }: MaskedFieldProps) {
-  const [revealed, setRevealed] = useState(false);
-  const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleRevealRequest = () => {
-    onReveal(realValue, label);
-  };
-
-  // Called after audit confirmation
-  const doReveal = useCallback(() => {
-    setRevealed(true);
-    if (timer) clearTimeout(timer);
-    const t = setTimeout(() => setRevealed(false), 15000);
-    setTimer(t);
-  }, [timer]);
-
-  // expose doReveal via a ref-like mechanism by calling it on a custom event
-  // Instead, we'll just trust that the parent calls this via the modal confirm
-  void doReveal; // used externally
-
-  return (
-    <div className="p-2 rounded bg-[#1b1f2c] border border-[#3c494b]/20 flex items-center justify-between gap-2">
-      {revealed ? (
-        <span className="font-code-sm text-[12px] text-emerald-400 font-medium">{realValue}</span>
-      ) : (
-        <span className="font-code-sm text-[12px] text-amber-300/80">{maskFn(realValue)}</span>
-      )}
-      {!revealed && (
-        <button
-          onClick={handleRevealRequest}
-          className="shrink-0 text-[#859396] hover:text-amber-400 transition-colors cursor-pointer"
-          title="Reveal sensitive data"
-        >
-          <span className="material-symbols-outlined text-[16px]">visibility</span>
-        </button>
-      )}
-      {revealed && (
-        <span className="material-symbols-outlined text-[14px] text-emerald-400 shrink-0">check_circle</span>
-      )}
-    </div>
-  );
-}
+// MaskedField is implemented inline in the main component for per-key reveal state.
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 export const EntityDnaView = ({
@@ -180,12 +131,6 @@ export const EntityDnaView = ({
 
   const activeEntity = entities.find(e => e.id === selectedId) || entities[0];
 
-  const requestReveal = (real: string, label: string, itemKey: string, maskFn: (v: string) => string) => {
-    // Store itemKey so we can mark it revealed on confirm
-    setRevealModal({ label, real, masked: maskFn(real) });
-    // store itemKey reference for confirm
-    pendingRevealKey.current = itemKey;
-  };
   const pendingRevealKey = { current: '' };
 
   const confirmReveal = (reason: string) => {
@@ -207,7 +152,7 @@ export const EntityDnaView = ({
         analyst: session.user.displayName,
         role: session.user.role,
         action: 'SENSITIVE_DATA_ACCESS',
-        resource: `${activeEntity?.name} (${revealModal?.label})`,
+        resource: `${activeEntity?.name} (${revealModal?.label}) — Reason: ${reason}`,
         hash: '',
         prevHash: '',
       });
