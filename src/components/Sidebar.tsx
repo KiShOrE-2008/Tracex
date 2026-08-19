@@ -1,4 +1,4 @@
-import React from 'react';
+import type { FC } from 'react';
 
 export type NavTab = 
   | 'overview' 
@@ -21,7 +21,7 @@ interface SidebarProps {
   evidenceCount: number;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({
+export const Sidebar: FC<SidebarProps> = ({
   activeTab,
   setActiveTab,
   onOpenNewCaseModal,

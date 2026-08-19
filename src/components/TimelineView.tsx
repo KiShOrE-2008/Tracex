@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { TimelineEvent, EventCategory } from '../types/forensic';
 
 interface TimelineViewProps {
   events: TimelineEvent[];
 }
 
-export const TimelineView: React.FC<TimelineViewProps> = ({ events }) => {
+export const TimelineView = ({ events }: TimelineViewProps) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [riskFilter, setRiskFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');

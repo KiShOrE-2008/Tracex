@@ -1,4 +1,4 @@
-import React from 'react';
+import type { FC } from 'react';
 
 interface HeaderProps {
   currentCaseId: string;
@@ -8,7 +8,7 @@ interface HeaderProps {
   activeTabLabel: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({
+export const Header: FC<HeaderProps> = ({
   currentCaseId,
   onSelectCase,
   searchQuery,

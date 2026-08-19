@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import type { TowerPing } from '../types/forensic';
 
@@ -9,6 +10,7 @@ interface MapViewProps {
 export const MapView: React.FC<MapViewProps> = ({ pings }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const markersGroupRef = useRef<L.LayerGroup | null>(null);
   const [selectedPingId, setSelectedPingId] = useState<string>('TP-1');
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
 
@@ -32,25 +34,27 @@ export const MapView: React.FC<MapViewProps> = ({ pings }) => {
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
+    // Create a dedicated layer group for markers/polylines/circles
+    const markersGroup = L.layerGroup().addTo(map);
+    markersGroupRef.current = markersGroup;
+
     mapInstanceRef.current = map;
 
     return () => {
       map.remove();
       mapInstanceRef.current = null;
+      markersGroupRef.current = null;
     };
   }, []);
 
   // Update Markers & Paths
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map) return;
+    const markersGroup = markersGroupRef.current;
+    if (!map || !markersGroup) return;
 
-    // Clear previous markers
-    map.eachLayer((layer) => {
-      if (layer instanceof L.Marker || layer instanceof L.Polyline || layer instanceof L.Circle) {
-        map.removeLayer(layer);
-      }
-    });
+    // Clear previous markers/polylines/circles from the group
+    markersGroup.clearLayers();
 
     // Draw suspect movement polyline
     const pathCoords = pings.map(p => [p.lat, p.lng] as [number, number]);
@@ -60,7 +64,7 @@ export const MapView: React.FC<MapViewProps> = ({ pings }) => {
         weight: 3,
         dashArray: '6, 8',
         opacity: 0.7
-      }).addTo(map);
+      }).addTo(markersGroup);
     }
 
     // Add Markers
@@ -93,7 +97,7 @@ export const MapView: React.FC<MapViewProps> = ({ pings }) => {
         iconAnchor: [16, 16]
       });
 
-      const marker = L.marker([ping.lat, ping.lng], { icon: customIcon }).addTo(map);
+      const marker = L.marker([ping.lat, ping.lng], { icon: customIcon }).addTo(markersGroup);
       marker.bindPopup(`
         <div style="background: #1b1f2c; color: #dfe2f4; padding: 8px; font-family: Inter; border-radius: 4px;">
           <strong style="color: #6dedff;">${ping.towerName}</strong><br/>
@@ -114,7 +118,7 @@ export const MapView: React.FC<MapViewProps> = ({ pings }) => {
           fillColor: '#93000a',
           fillOpacity: 0.15,
           weight: 1.5
-        }).addTo(map);
+        }).addTo(markersGroup);
       }
     });
 

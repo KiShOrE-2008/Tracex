@@ -60,7 +60,7 @@ export function App() {
     setActiveTab('overview');
   };
 
-  const handleCreateCase = (caseData: { id: string; title: string; leadOfficer: string }) => {
+  const handleCreateCase = (caseData: { id: string; title: string; leadOfficer: string; description: string }) => {
     setCurrentCaseId(caseData.id);
     showToast(`Case ${caseData.id} (${caseData.title}) created successfully.`);
   };

@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { AuditLogItem } from '../types/forensic';
 
 interface AuditLogViewProps {
   logs: AuditLogItem[];
 }
 
-export const AuditLogView: React.FC<AuditLogViewProps> = ({ logs }) => {
+export const AuditLogView = ({ logs }: AuditLogViewProps) => {
   const [filterQuery, setFilterQuery] = useState('');
 
   const filteredLogs = logs.filter(l => 

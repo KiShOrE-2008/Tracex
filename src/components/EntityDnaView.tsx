@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { EntityDNA } from '../types/forensic';
 
 interface EntityDnaViewProps {
@@ -7,11 +7,11 @@ interface EntityDnaViewProps {
   onOpenGraphForEntity?: (name: string) => void;
 }
 
-export const EntityDnaView: React.FC<EntityDnaViewProps> = ({
+export const EntityDnaView = ({
   entities,
   initialSelectedName,
   onOpenGraphForEntity
-}) => {
+}: EntityDnaViewProps) => {
   const [selectedId, setSelectedId] = useState<string>(() => {
     if (initialSelectedName) {
       const match = entities.find(e => e.name.toLowerCase().includes(initialSelectedName.toLowerCase()));

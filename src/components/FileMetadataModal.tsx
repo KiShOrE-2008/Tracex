@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { EvidenceFile } from '../types/forensic';
 
 interface FileMetadataModalProps {
@@ -6,7 +6,7 @@ interface FileMetadataModalProps {
   onClose: () => void;
 }
 
-export const FileMetadataModal: React.FC<FileMetadataModalProps> = ({ file, onClose }) => {
+export const FileMetadataModal = ({ file, onClose }: FileMetadataModalProps) => {
   const [copied, setCopied] = useState(false);
 
   if (!file) return null;

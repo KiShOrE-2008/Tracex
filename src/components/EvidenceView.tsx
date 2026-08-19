@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import type React from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Papa from 'papaparse';
 import type { EvidenceFile } from '../types/forensic';
 
@@ -21,6 +22,12 @@ export const EvidenceView: React.FC<EvidenceViewProps> = ({
   const [filterType, setFilterType] = useState<string>('ALL');
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync selectedIds when files change externally (e.g. after removal)
+  useEffect(() => {
+    const currentFileIds = new Set(files.map(f => f.id));
+    setSelectedIds(prev => prev.filter(id => currentFileIds.has(id)));
+  }, [files]);
 
   // Compute SHA-256 hash using Web Crypto API
   const calculateSha256 = async (file: File): Promise<string> => {

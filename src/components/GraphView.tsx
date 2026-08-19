@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import type React from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import type { GraphNode, GraphEdge, NodeType } from '../types/forensic';
 
 interface GraphViewProps {
@@ -29,7 +30,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ nodes, edges, onSelectEnti
   const selectedEdges = edges.filter(e => e.source === selectedNodeId || e.target === selectedNodeId);
 
   // Canvas Node layout positions
-  const getNodePos = (index: number, total: number, width: number, height: number) => {
+  const getNodePos = useCallback((index: number, total: number, width: number, height: number) => {
     const angle = (index / total) * 2 * Math.PI - Math.PI / 2;
     const radiusX = Math.min(width, height) * 0.35 * zoomLevel;
     const radiusY = Math.min(width, height) * 0.32 * zoomLevel;
@@ -39,7 +40,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ nodes, edges, onSelectEnti
       x: centerX + radiusX * Math.cos(angle),
       y: centerY + radiusY * Math.sin(angle)
     };
-  };
+  }, [zoomLevel]);
 
   // Render network graph on canvas
   useEffect(() => {
@@ -159,7 +160,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ nodes, edges, onSelectEnti
         ctx.fillText(node.subtext, pos.x, pos.y + 44);
       }
     });
-  }, [filteredNodes, edges, selectedNodeId, zoomLevel]);
+  }, [filteredNodes, edges, selectedNodeId, zoomLevel, getNodePos]);
 
   // Canvas Click Handler
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {

@@ -1,11 +1,11 @@
-import React from 'react';
+import type { FC } from 'react';
 import type { FinancialTxn } from '../types/forensic';
 
 interface FinanceViewProps {
   txns: FinancialTxn[];
 }
 
-export const FinanceView: React.FC<FinanceViewProps> = ({ txns }) => {
+export const FinanceView: FC<FinanceViewProps> = ({ txns }) => {
   const totalVolume = txns.reduce((acc, t) => acc + t.amount, 0);
 
   return (

@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
 import type { CopilotMessage } from '../types/forensic';
 
 interface CopilotViewProps {
   onNavigateTab?: (tab: string) => void;
 }
 
-export const CopilotView: React.FC<CopilotViewProps> = () => {
+export const CopilotView: React.FC<CopilotViewProps> = ({ onNavigateTab: _onNavigateTab }) => {
   const [messages, setMessages] = useState<CopilotMessage[]>([
     {
       id: 'MSG-1',

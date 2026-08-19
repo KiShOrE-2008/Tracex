@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { EvidenceFile } from '../types/forensic';
 
 interface ReportsViewProps {
@@ -6,7 +6,7 @@ interface ReportsViewProps {
   caseId: string;
 }
 
-export const ReportsView: React.FC<ReportsViewProps> = ({ files, caseId }) => {
+export const ReportsView = ({ files, caseId }: ReportsViewProps) => {
   const [showCertificate, setShowCertificate] = useState(true);
 
   const handlePrint = () => {

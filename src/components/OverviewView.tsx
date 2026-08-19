@@ -1,11 +1,11 @@
-import React from 'react';
+import type { FC } from 'react';
 
 interface OverviewViewProps {
   onNavigateTab: (tab: any) => void;
   fileCount: number;
 }
 
-export const OverviewView: React.FC<OverviewViewProps> = ({ onNavigateTab, fileCount }) => {
+export const OverviewView: FC<OverviewViewProps> = ({ onNavigateTab, fileCount }) => {
   return (
     <div className="space-y-6">
       {/* Case Header Banner */}
