@@ -7,6 +7,25 @@ interface MapViewProps {
   pings: TowerPing[];
 }
 
+interface TowerRangeStyle {
+  stroke: string;
+  fill: string;
+  radius: number;
+  label: string;
+}
+
+const TOWER_COLOR_STYLES: Record<string, TowerRangeStyle> = {
+  'TP-1': { stroke: '#ffb4ab', fill: '#ffb4ab', radius: 450, label: 'Sector 43 Main Sector (High Risk)' },
+  'TP-2': { stroke: '#f87171', fill: '#f87171', radius: 400, label: 'Sector 43 South Sector (Co-location)' },
+  'TP-3': { stroke: '#6dedff', fill: '#6dedff', radius: 600, label: 'Sector 17 Plaza Sector' },
+  'TP-4': { stroke: '#c084fc', fill: '#c084fc', radius: 750, label: 'Mohali Industrial Sector' },
+  'TP-5': { stroke: '#34d399', fill: '#34d399', radius: 550, label: 'Panchkula Financial Sector' }
+};
+
+const DEFAULT_RANGE_STYLE: TowerRangeStyle = {
+  stroke: '#fcd34d', fill: '#fcd34d', radius: 500, label: 'Standard Coverage Sector'
+};
+
 export const MapView: React.FC<MapViewProps> = ({ pings }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -67,28 +86,42 @@ export const MapView: React.FC<MapViewProps> = ({ pings }) => {
       }).addTo(markersGroup);
     }
 
-    // Add Markers
+    // Add Markers and Mild Range Circles for ALL Tower Pings
     pings.forEach((ping, idx) => {
       const isSelected = ping.id === selectedPingId;
-      const isCoLocation = ping.cellId.includes('4301');
+      const style = TOWER_COLOR_STYLES[ping.id] || DEFAULT_RANGE_STYLE;
 
-      // Custom HTML Marker Icon
+      // 1. Draw Mild Color Range Circle for Tower Coverage
+      L.circle([ping.lat, ping.lng], {
+        radius: style.radius,
+        color: style.stroke,
+        fillColor: style.fill,
+        fillOpacity: isSelected ? 0.22 : 0.10,
+        weight: isSelected ? 2.5 : 1.2,
+        dashArray: isSelected ? undefined : '5, 5'
+      }).addTo(markersGroup);
+
+      // 2. Custom Color-Matched HTML Marker Icon
+      const markerBg = isSelected ? style.stroke : '#1b1f2c';
+      const markerTextColor = isSelected ? '#00363d' : '#dfe2f4';
+
       const customIcon = L.divIcon({
         className: 'custom-map-icon',
         html: `
           <div style="
-            background: ${isSelected ? '#28d2e6' : isCoLocation ? '#ffb4ab' : '#1b1f2c'};
-            border: 2px solid ${isCoLocation ? '#ffb4ab' : '#6dedff'};
+            background: ${markerBg};
+            border: 2px solid ${style.stroke};
             width: ${isSelected ? '32px' : '26px'};
             height: ${isSelected ? '32px' : '26px'};
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 12px ${isCoLocation ? 'rgba(255,180,171,0.6)' : 'rgba(40,210,230,0.4)'};
-            color: ${isSelected ? '#00363d' : '#dfe2f4'};
-            font-size: 14px;
+            box-shadow: 0 0 14px ${style.stroke}77;
+            color: ${markerTextColor};
+            font-size: 13px;
             font-weight: bold;
+            transition: all 0.2s ease;
           ">
             ${idx + 1}
           </div>
@@ -99,8 +132,9 @@ export const MapView: React.FC<MapViewProps> = ({ pings }) => {
 
       const marker = L.marker([ping.lat, ping.lng], { icon: customIcon }).addTo(markersGroup);
       marker.bindPopup(`
-        <div style="background: #1b1f2c; color: #dfe2f4; padding: 8px; font-family: Inter; border-radius: 4px;">
-          <strong style="color: #6dedff;">${ping.towerName}</strong><br/>
+        <div style="background: #1b1f2c; color: #dfe2f4; padding: 8px; font-family: Inter; border-radius: 6px; border: 1px solid ${style.stroke}66;">
+          <strong style="color: ${style.stroke};">${ping.towerName}</strong><br/>
+          <span style="font-size: 11px; color: #859396;">Coverage Radius: ${style.radius}m</span><br/>
           <span style="font-size: 11px; color: #859396;">${ping.suspectName}</span><br/>
           <span style="font-size: 11px;">Time: ${ping.timestamp}</span>
         </div>
@@ -109,17 +143,6 @@ export const MapView: React.FC<MapViewProps> = ({ pings }) => {
       marker.on('click', () => {
         setSelectedPingId(ping.id);
       });
-
-      // Add Range Circle for Co-location
-      if (isCoLocation) {
-        L.circle([ping.lat, ping.lng], {
-          radius: 350,
-          color: '#ffb4ab',
-          fillColor: '#93000a',
-          fillOpacity: 0.15,
-          weight: 1.5
-        }).addTo(markersGroup);
-      }
     });
 
     // Fly map to active selected ping
@@ -215,6 +238,13 @@ export const MapView: React.FC<MapViewProps> = ({ pings }) => {
                   <span className="text-[#859396]">Coordinates:</span>
                   <span className="text-[#dfe2f4] font-code-sm text-[11px]">{selectedPing.lat.toFixed(4)}, {selectedPing.lng.toFixed(4)}</span>
                 </div>
+                <div className="flex justify-between border-b border-[#3c494b]/20 pb-1">
+                  <span className="text-[#859396]">Tower Coverage Range:</span>
+                  <span className="font-code-sm text-[11px] font-semibold flex items-center gap-1.5" style={{ color: (TOWER_COLOR_STYLES[selectedPing.id] || DEFAULT_RANGE_STYLE).stroke }}>
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: (TOWER_COLOR_STYLES[selectedPing.id] || DEFAULT_RANGE_STYLE).stroke }}></span>
+                    {(TOWER_COLOR_STYLES[selectedPing.id] || DEFAULT_RANGE_STYLE).radius}m Radius ({selectedPing.azimuth || 45}° Sector)
+                  </span>
+                </div>
                 {selectedPing.signalStrength && (
                   <div className="flex justify-between border-b border-[#3c494b]/20 pb-1">
                     <span className="text-[#859396]">Signal Strength:</span>
@@ -246,18 +276,24 @@ export const MapView: React.FC<MapViewProps> = ({ pings }) => {
           <div className="mt-auto">
             <h5 className="font-label-caps text-[10px] text-[#859396] mb-2">Chronological Pings List</h5>
             <div className="space-y-1 max-h-40 overflow-y-auto pr-1">
-              {pings.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setSelectedPingId(p.id)}
-                  className={`w-full p-2 rounded text-left font-code-sm text-[11px] flex justify-between transition-colors ${
-                    p.id === selectedPingId ? 'bg-[#6dedff]/10 text-[#6dedff] border border-[#6dedff]/30' : 'bg-[#171b28] text-[#859396] hover:bg-[#303442]'
-                  }`}
-                >
-                  <span className="truncate max-w-[160px]">{p.towerName}</span>
-                  <span>{p.timestamp.split(' ')[1]}</span>
-                </button>
-              ))}
+              {pings.map((p, pIdx) => {
+                const style = TOWER_COLOR_STYLES[p.id] || DEFAULT_RANGE_STYLE;
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => setSelectedPingId(p.id)}
+                    className={`w-full p-2 rounded text-left font-code-sm text-[11px] flex justify-between items-center transition-colors ${
+                      p.id === selectedPingId ? 'bg-[#6dedff]/10 text-[#6dedff] border border-[#6dedff]/30' : 'bg-[#171b28] text-[#859396] hover:bg-[#303442]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 truncate max-w-[170px]">
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: style.stroke }}></span>
+                      <span className="truncate">{pIdx + 1}. {p.towerName}</span>
+                    </div>
+                    <span>{p.timestamp.split(' ')[1]}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

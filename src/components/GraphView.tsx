@@ -8,6 +8,20 @@ interface GraphViewProps {
   onSelectEntityDna?: (suspectName: string) => void;
 }
 
+// Predefined relative positions for known mock nodes to create a clean, non-colliding layout
+const PREDEFINED_POSITIONS: Record<string, { xRatio: number; yRatio: number }> = {
+  'N-SUS1': { xRatio: 0.22, yRatio: 0.18 }, // Vikram "Shadow" Sharma (Top Left)
+  'N-SUS2': { xRatio: 0.54, yRatio: 0.18 }, // Rajesh Verma (Top Center)
+  'N-SUS3': { xRatio: 0.84, yRatio: 0.18 }, // Ananya Gupta (Top Right)
+  'N-TEL1': { xRatio: 0.32, yRatio: 0.46 }, // Target A Phone (Mid-Left)
+  'N-TEL2': { xRatio: 0.54, yRatio: 0.46 }, // Jio Burner SIM (Mid-Center)
+  'N-BNK1': { xRatio: 0.84, yRatio: 0.46 }, // HDFC Bank (Mid-Right)
+  'N-UPI2': { xRatio: 0.12, yRatio: 0.74 }, // Personal Paytm VPA (Bottom Left)
+  'N-TOW1': { xRatio: 0.38, yRatio: 0.78 }, // Cell Tower ISBT (Bottom Mid-Left)
+  'N-IP1':  { xRatio: 0.64, yRatio: 0.78 }, // ProtonVPN IP (Bottom Mid-Right)
+  'N-UPI1': { xRatio: 0.84, yRatio: 0.74 }  // Collection VPA (Bottom Right)
+};
+
 export const GraphView: React.FC<GraphViewProps> = ({ nodes, edges, onSelectEntityDna }) => {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>('N-SUS1');
   const [filterType, setFilterType] = useState<string>('ALL');
@@ -29,13 +43,26 @@ export const GraphView: React.FC<GraphViewProps> = ({ nodes, edges, onSelectEnti
   // Calculate connected edges and nodes for selected entity
   const selectedEdges = edges.filter(e => e.source === selectedNodeId || e.target === selectedNodeId);
 
-  // Canvas Node layout positions
-  const getNodePos = useCallback((index: number, total: number, width: number, height: number) => {
-    const angle = (index / total) * 2 * Math.PI - Math.PI / 2;
-    const radiusX = Math.min(width, height) * 0.35 * zoomLevel;
-    const radiusY = Math.min(width, height) * 0.32 * zoomLevel;
+  // Canvas Node layout positions (Structured Tier / Preset Ratios)
+  const getNodePos = useCallback((node: GraphNode, index: number, total: number, width: number, height: number) => {
     const centerX = width / 2;
     const centerY = height / 2;
+
+    if (PREDEFINED_POSITIONS[node.id]) {
+      const preset = PREDEFINED_POSITIONS[node.id];
+      // Apply zoom centering
+      const px = width * preset.xRatio;
+      const py = height * preset.yRatio;
+      return {
+        x: centerX + (px - centerX) * zoomLevel,
+        y: centerY + (py - centerY) * zoomLevel
+      };
+    }
+
+    // Dynamic Ring Fallback for new unmapped nodes
+    const angle = (index / total) * 2 * Math.PI - Math.PI / 2;
+    const radiusX = Math.min(width, height) * 0.36 * zoomLevel;
+    const radiusY = Math.min(width, height) * 0.32 * zoomLevel;
     return {
       x: centerX + radiusX * Math.cos(angle),
       y: centerY + radiusY * Math.sin(angle)
@@ -59,11 +86,11 @@ export const GraphView: React.FC<GraphViewProps> = ({ nodes, edges, onSelectEnti
     const height = rect.height;
 
     // Clear background
-    ctx.fillStyle = '#0f131f';
+    ctx.fillStyle = '#090c15';
     ctx.fillRect(0, 0, width, height);
 
     // Draw background grid dots
-    ctx.fillStyle = '#303442';
+    ctx.fillStyle = '#1e2436';
     for (let x = 20; x < width; x += 30) {
       for (let y = 20; y < height; y += 30) {
         ctx.beginPath();
@@ -75,42 +102,74 @@ export const GraphView: React.FC<GraphViewProps> = ({ nodes, edges, onSelectEnti
     // Build position map for nodes
     const posMap: Record<string, { x: number; y: number }> = {};
     filteredNodes.forEach((node, idx) => {
-      posMap[node.id] = getNodePos(idx, filteredNodes.length, width, height);
+      posMap[node.id] = getNodePos(node, idx, filteredNodes.length, width, height);
     });
 
-    // Draw Edges
+    // 1. Draw Edges
     edges.forEach((edge) => {
       const p1 = posMap[edge.source];
       const p2 = posMap[edge.target];
       if (!p1 || !p2) return;
 
       const isConnectedToSelected = selectedNodeId && (edge.source === selectedNodeId || edge.target === selectedNodeId);
+      const isDimmed = selectedNodeId && !isConnectedToSelected;
 
+      ctx.save();
       ctx.beginPath();
       ctx.moveTo(p1.x, p1.y);
       ctx.lineTo(p2.x, p2.y);
       ctx.lineWidth = isConnectedToSelected ? 2.5 : 1.2;
-      ctx.strokeStyle = isConnectedToSelected ? '#6dedff' : 'rgba(133, 147, 150, 0.25)';
+      
+      if (isConnectedToSelected) {
+        ctx.strokeStyle = '#6dedff';
+        ctx.shadowColor = 'rgba(109, 237, 255, 0.4)';
+        ctx.shadowBlur = 8;
+      } else if (isDimmed) {
+        ctx.strokeStyle = 'rgba(60, 73, 75, 0.15)';
+      } else {
+        ctx.strokeStyle = 'rgba(133, 147, 150, 0.3)';
+      }
+
       if (edge.type === 'transfer') {
         ctx.setLineDash([6, 4]);
       } else {
         ctx.setLineDash([]);
       }
       ctx.stroke();
-      ctx.setLineDash([]);
+      ctx.restore();
 
-      // Edge Label
-      if (isConnectedToSelected || edges.length < 15) {
+      // Draw Edge Label Pill Badge
+      if (isConnectedToSelected || (!selectedNodeId && edges.length < 15)) {
         const midX = (p1.x + p2.x) / 2;
         const midY = (p1.y + p2.y) / 2;
-        ctx.font = '10px JetBrains Mono';
-        ctx.fillStyle = isConnectedToSelected ? '#6dedff' : '#859396';
+
+        ctx.font = '10px "JetBrains Mono", monospace';
+        const labelText = edge.label;
+        const textMetrics = ctx.measureText(labelText);
+        const paddingX = 8;
+        const badgeWidth = textMetrics.width + paddingX * 2;
+        const badgeHeight = 18;
+        const rx = midX - badgeWidth / 2;
+        const ry = midY - badgeHeight / 2;
+
+        // Badge Background Pill
+        ctx.fillStyle = '#0e1220';
+        ctx.strokeStyle = isConnectedToSelected ? 'rgba(109, 237, 255, 0.6)' : 'rgba(60, 73, 75, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(rx, ry, badgeWidth, badgeHeight, 9);
+        ctx.fill();
+        ctx.stroke();
+
+        // Badge Text
+        ctx.fillStyle = isConnectedToSelected ? '#6dedff' : '#a0acb0';
         ctx.textAlign = 'center';
-        ctx.fillText(edge.label, midX, midY - 6);
+        ctx.textBaseline = 'middle';
+        ctx.fillText(labelText, midX, midY + 0.5);
       }
     });
 
-    // Draw Nodes
+    // 2. Draw Nodes
     filteredNodes.forEach((node) => {
       const pos = posMap[node.id];
       if (!pos) return;
@@ -121,21 +180,6 @@ export const GraphView: React.FC<GraphViewProps> = ({ nodes, edges, onSelectEnti
         (e.target === selectedNodeId && e.source === node.id)
       );
 
-      // Node Outer Glow
-      if (isSelected || node.riskScore > 85) {
-        ctx.beginPath();
-        ctx.arc(pos.x, pos.y, 24, 0, Math.PI * 2);
-        ctx.fillStyle = isSelected ? 'rgba(109, 237, 255, 0.2)' : 'rgba(255, 180, 171, 0.15)';
-        ctx.fill();
-      }
-
-      // Node Body Circle
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, 18, 0, Math.PI * 2);
-      ctx.fillStyle = isSelected ? '#28d2e6' : isConnected ? '#1b1f2c' : '#171b28';
-      ctx.fill();
-      ctx.lineWidth = isSelected ? 2.5 : 1.5;
-
       const colorMap: Record<NodeType, string> = {
         suspect: '#ffb4ab',
         phone: '#6dedff',
@@ -144,20 +188,70 @@ export const GraphView: React.FC<GraphViewProps> = ({ nodes, edges, onSelectEnti
         tower: '#36d9ed',
         ip_address: '#f59e0b'
       };
-      ctx.strokeStyle = colorMap[node.type] || '#859396';
+      const nodeColor = colorMap[node.type] || '#859396';
+
+      // Node Outer Glow
+      if (isSelected || node.riskScore > 85) {
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, 24, 0, Math.PI * 2);
+        ctx.fillStyle = isSelected ? 'rgba(109, 237, 255, 0.25)' : 'rgba(255, 180, 171, 0.15)';
+        ctx.fill();
+      }
+
+      // Node Circle Body
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, 18, 0, Math.PI * 2);
+      ctx.fillStyle = isSelected ? '#28d2e6' : isConnected ? '#181d2f' : '#111523';
+      ctx.fill();
+      ctx.lineWidth = isSelected ? 2.5 : 1.5;
+      ctx.strokeStyle = isSelected ? '#6dedff' : nodeColor;
       ctx.stroke();
 
-      // Node Label Text
-      ctx.font = isSelected ? 'bold 12px Inter' : '11px Inter';
-      ctx.fillStyle = isSelected ? '#6dedff' : '#dfe2f4';
+      // Node Icon Symbol Inside Circle
+      const iconSymbolMap: Record<NodeType, string> = {
+        suspect: '👤',
+        phone: '📱',
+        bank_account: '🏦',
+        upi: '💳',
+        tower: '📡',
+        ip_address: '🌐'
+      };
+      ctx.font = '12px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(node.label, pos.x, pos.y + 32);
+      ctx.textBaseline = 'middle';
+      ctx.fillText(iconSymbolMap[node.type] || '•', pos.x, pos.y);
 
-      // Subtext
+      // Node Label Card Backdrop (Prevents line/text overlap)
+      ctx.font = isSelected ? 'bold 11px Inter, sans-serif' : '11px Inter, sans-serif';
+      const labelWidth = ctx.measureText(node.label).width;
+      ctx.font = '9px "JetBrains Mono", monospace';
+      const subtextWidth = node.subtext ? ctx.measureText(node.subtext).width : 0;
+      const cardWidth = Math.max(labelWidth, subtextWidth) + 14;
+      const cardHeight = node.subtext ? 30 : 18;
+      const cardX = pos.x - cardWidth / 2;
+      const cardY = pos.y + 24;
+
+      // Card Background
+      ctx.fillStyle = isSelected ? 'rgba(24, 29, 47, 0.95)' : 'rgba(15, 19, 34, 0.9)';
+      ctx.strokeStyle = isSelected ? 'rgba(109, 237, 255, 0.6)' : isConnected ? 'rgba(109, 237, 255, 0.3)' : 'rgba(60, 73, 75, 0.4)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(cardX, cardY, cardWidth, cardHeight, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      // Main Label Text
+      ctx.font = isSelected ? 'bold 11px Inter, sans-serif' : '11px Inter, sans-serif';
+      ctx.fillStyle = isSelected ? '#6dedff' : isConnected ? '#dfe2f4' : '#c3cbce';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(node.label, pos.x, cardY + 3);
+
+      // Subtext Inside Card
       if (node.subtext) {
-        ctx.font = '10px JetBrains Mono';
-        ctx.fillStyle = '#859396';
-        ctx.fillText(node.subtext, pos.x, pos.y + 44);
+        ctx.font = '9px "JetBrains Mono", monospace';
+        ctx.fillStyle = isSelected ? '#95f1ff' : '#859396';
+        ctx.fillText(node.subtext, pos.x, cardY + 16);
       }
     });
   }, [filteredNodes, edges, selectedNodeId, zoomLevel, getNodePos]);
@@ -173,12 +267,12 @@ export const GraphView: React.FC<GraphViewProps> = ({ nodes, edges, onSelectEnti
     const width = rect.width;
     const height = rect.height;
 
-    // Check hit test
+    // Check hit test (both circle and label card area)
     for (let idx = 0; idx < filteredNodes.length; idx++) {
       const node = filteredNodes[idx];
-      const pos = getNodePos(idx, filteredNodes.length, width, height);
+      const pos = getNodePos(node, idx, filteredNodes.length, width, height);
       const dist = Math.hypot(x - pos.x, y - pos.y);
-      if (dist <= 22) {
+      if (dist <= 24 || (Math.abs(x - pos.x) <= 60 && y >= pos.y + 20 && y <= pos.y + 60)) {
         setSelectedNodeId(node.id);
         return;
       }
@@ -276,14 +370,15 @@ export const GraphView: React.FC<GraphViewProps> = ({ nodes, edges, onSelectEnti
             className="w-full h-full cursor-pointer"
           />
 
-          {/* Graph Legend Overlay */}
-          <div className="absolute bottom-3 left-3 bg-[#1b1f2c]/80 backdrop-blur-md p-2.5 rounded border border-[#3c494b]/30 space-y-1.5 text-[10px] font-label-caps">
-            <div className="text-[#859396] font-bold mb-1">NODE LEGEND</div>
-            <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-[#ffb4ab]"></span> Suspect</div>
-            <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-[#6dedff]"></span> Phone Number</div>
-            <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-[#e7d3ff]"></span> Bank Account</div>
-            <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-[#b4c5ff]"></span> UPI VPA</div>
-            <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-[#36d9ed]"></span> Cell Tower</div>
+          {/* Graph Legend Overlay (Top Left Horizontal Bar) */}
+          <div className="absolute top-3 left-3 bg-[#0e1220]/90 backdrop-blur-md px-3.5 py-1.5 rounded-lg border border-[#3c494b]/40 flex items-center gap-3 text-[10px] font-label-caps shadow-md z-10">
+            <span className="text-[#859396] font-bold tracking-wider">NODE LEGEND:</span>
+            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#ffb4ab]"></span> Suspect</div>
+            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#6dedff]"></span> Phone Number</div>
+            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#e7d3ff]"></span> Bank Account</div>
+            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#b4c5ff]"></span> UPI VPA</div>
+            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#36d9ed]"></span> Cell Tower</div>
+            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#f59e0b]"></span> IP Node</div>
           </div>
         </div>
 
