@@ -21,6 +21,7 @@ import { FileMetadataModal } from './components/FileMetadataModal';
 import { NewCaseModal } from './components/NewCaseModal';
 import { SecurityCenterView } from './components/SecurityCenterView';
 import { UserManagementView } from './components/UserManagementView';
+import { AccessControlView } from './components/AccessControlView';
 
 import {
   INITIAL_EVIDENCE_FILES,
@@ -164,9 +165,9 @@ function Dashboard() {
     alerts:           'Anomaly Detection — Alert Center',
     correlation:      'Cross-Domain Correlation Engine',
     social_media:     'Social Media Intelligence',
-    user_management:  'User Management & Access Control',
-    security_center:  'Security Center — System Status',
-    access_control:   'Role-Based Access Control Matrix',
+    user_management:  'Officer Directory & Identity Provisioning',
+    security_center:  'Security Center — System Telemetry & Integrity',
+    access_control:   'Role-Based Access Control (RBAC) & Network Policies',
   };
 
   return (
@@ -296,11 +297,31 @@ function Dashboard() {
           )}
 
           {activeTab === 'user_management' && (
-            <UserManagementView />
+            <UserManagementView
+              onAddAuditLog={(partial) => {
+                addAuditEvent({
+                  analyst: partial.analyst,
+                  role: partial.role as UserRole,
+                  action: partial.action,
+                  resource: partial.resource,
+                });
+              }}
+              showToast={showToast}
+            />
           )}
 
           {activeTab === 'access_control' && (
-            <UserManagementView />
+            <AccessControlView
+              onAddAuditLog={(partial) => {
+                addAuditEvent({
+                  analyst: partial.analyst,
+                  role: partial.role as UserRole,
+                  action: partial.action,
+                  resource: partial.resource,
+                });
+              }}
+              showToast={showToast}
+            />
           )}
 
           {activeTab === 'settings' && (

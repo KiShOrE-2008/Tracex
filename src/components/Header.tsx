@@ -123,20 +123,20 @@ export const Header: FC<HeaderProps> = ({
         <div
           onClick={logout}
           title="Click to logout"
-          className="flex items-center gap-2.5 px-2 py-1 rounded-lg bg-[#181d2f]/60 hover:bg-red-500/10 border border-[#3c494b]/30 hover:border-red-500/30 transition-all cursor-pointer group"
+          className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-[#181d2f]/80 hover:bg-red-500/10 border border-[#3c494b]/40 hover:border-red-500/40 transition-all cursor-pointer group shrink-0 shadow-[0_2px_8px_rgba(0,0,0,0.3)]"
         >
           <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-[#6dedff]/40 group-hover:border-red-400/50 transition-colors shrink-0 shadow-[0_0_10px_rgba(40,210,230,0.2)] bg-gradient-to-br from-[#28d2e6]/20 to-[#6620bd]/25 flex items-center justify-center">
             <span className="material-symbols-outlined text-[#6dedff] text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
           </div>
-          <div className="hidden lg:flex flex-col text-left">
-            <span className="font-body-sm text-[12px] font-semibold text-[#dfe2f4] group-hover:text-red-300 transition-colors leading-tight">
+          <div className="flex flex-col text-left justify-center whitespace-nowrap min-w-0">
+            <span className="font-body-sm text-[12px] font-semibold text-[#dfe2f4] group-hover:text-red-300 transition-colors leading-tight whitespace-nowrap">
               {session?.user.displayName ?? 'Unknown'}
             </span>
-            <span className="font-label-caps text-[9px] text-[#28d2e6] tracking-wider font-semibold">
+            <span className="font-label-caps text-[9px] text-[#28d2e6] tracking-wider font-semibold whitespace-nowrap mt-0.5">
               {session?.user.department ?? ''}
             </span>
           </div>
-          <span className="material-symbols-outlined text-[14px] text-[#859396] group-hover:text-red-400 transition-colors ml-1">logout</span>
+          <span className="material-symbols-outlined text-[16px] text-[#859396] group-hover:text-red-400 transition-colors ml-1 shrink-0">logout</span>
         </div>
       </div>
     </header>

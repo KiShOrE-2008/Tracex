@@ -206,9 +206,9 @@ export const Sidebar: FC<SidebarProps> = ({
                               : 'text-[#859396] hover:text-[#dfe2f4] hover:bg-[#1f263c]/60 cursor-pointer'
                         }`}
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
                           <span
-                            className={`material-symbols-outlined text-[19px] transition-transform duration-200 ${!isLocked && 'group-hover:scale-110'} ${
+                            className={`material-symbols-outlined text-[19px] w-5 h-5 flex items-center justify-center shrink-0 transition-transform duration-200 ${!isLocked && 'group-hover:scale-110'} ${
                               isAlertItem ? 'text-red-400 animate-pulse' :
                               isActive ? 'text-[#6dedff]' : 'text-[#859396] group-hover:text-[#6dedff]'
                             }`}
@@ -216,7 +216,7 @@ export const Sidebar: FC<SidebarProps> = ({
                           >
                             {item.icon}
                           </span>
-                          <span className="font-label-caps text-[11px] tracking-wider font-medium">{item.label}</span>
+                          <span className="font-label-caps text-[11px] tracking-wider font-medium truncate">{item.label}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           {isLocked && (
