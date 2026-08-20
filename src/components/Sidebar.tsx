@@ -134,13 +134,13 @@ export const Sidebar: FC<SidebarProps> = ({
       {/* Logo */}
       <div className="px-5 mb-5 mt-2">
         <div className="flex items-center gap-3 group cursor-pointer">
-          <div className="relative w-10 h-10 rounded-lg bg-gradient-to-br from-[#28d2e6]/25 to-[#6620bd]/30 flex items-center justify-center border border-[#6dedff]/40 shadow-[0_0_15px_rgba(40,210,230,0.25)] transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_0_22px_rgba(40,210,230,0.45)]">
-            <span className="material-symbols-outlined text-[#6dedff] text-[22px]" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
-            <div className="absolute -inset-0.5 rounded-lg bg-[#6dedff]/20 blur-sm -z-10 group-hover:opacity-100 opacity-60 transition-opacity" />
+          <div className="relative w-11 h-11 rounded-xl overflow-hidden border border-[#6dedff]/50 shadow-[0_0_18px_rgba(40,210,230,0.45)] transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_0_25px_rgba(40,210,230,0.7)] bg-[#070b14] flex items-center justify-center p-0.5 shrink-0">
+            <img src="/logo.png" alt="NEXUS Evidence Logo" className="w-full h-full object-contain rounded-lg" />
+            <div className="absolute -inset-0.5 rounded-xl bg-[#6dedff]/25 blur-sm -z-10 group-hover:opacity-100 opacity-70 transition-opacity" />
           </div>
           <div>
-            <h1 className="font-headline-sm text-[17px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ffffff] via-[#6dedff] to-[#95f1ff] tracking-wider leading-none mb-1">
-              POLICE NEXUS
+            <h1 className="font-headline-sm text-[16px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#ffffff] via-[#6dedff] to-[#95f1ff] tracking-wider leading-none mb-1">
+              NEXUS Evidence
             </h1>
             <p className="font-label-caps text-[10px] text-[#859396] tracking-widest flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#28d2e6] inline-block animate-pulse" />

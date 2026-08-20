@@ -63,15 +63,15 @@ export function LoginView() {
 
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
-            <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-[#28d2e6]/30 to-[#6620bd]/40 flex items-center justify-center border border-[#6dedff]/40 shadow-[0_0_30px_rgba(40,210,230,0.4)] mb-4">
-              <span className="material-symbols-outlined text-[#6dedff] text-[36px]" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
-              <div className="absolute -inset-0.5 rounded-2xl bg-[#6dedff]/10 blur-sm -z-10" />
+            <div className="relative w-24 h-24 rounded-2xl overflow-hidden border border-[#6dedff]/50 shadow-[0_0_40px_rgba(40,210,230,0.55)] mb-4 bg-[#070b14] p-1 flex items-center justify-center transition-transform duration-300 hover:scale-105">
+              <img src="/logo.png" alt="NEXUS Evidence Logo" className="w-full h-full object-contain rounded-xl" />
+              <div className="absolute -inset-0.5 rounded-2xl bg-[#6dedff]/25 blur-md -z-10" />
             </div>
-            <h1 className="font-headline-sm text-[22px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-[#6dedff] to-[#95f1ff] tracking-wider mb-1">
-              POLICE NEXUS
+            <h1 className="font-headline-sm text-[24px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-[#6dedff] to-[#95f1ff] tracking-wider mb-1">
+              NEXUS Evidence
             </h1>
             <p className="font-label-caps text-[10px] text-[#859396] tracking-widest">
-              INVESTIGATIVE ANALYTICS PLATFORM
+              FORENSIC INTELLIGENCE WORKSPACE
             </p>
           </div>
 

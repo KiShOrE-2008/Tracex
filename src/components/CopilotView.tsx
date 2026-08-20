@@ -11,7 +11,7 @@ export const CopilotView: React.FC<CopilotViewProps> = ({ onNavigateTab: _onNavi
     {
       id: 'MSG-1',
       sender: 'assistant',
-      text: 'Police Nexus Copilot initialized. I have analyzed 6 ingested evidence files for Operation Shadow (PN-2026-001). How can I assist your investigation?',
+      text: 'NEXUS Evidence Copilot initialized. I have analyzed 6 ingested evidence files for Operation Shadow (PN-2026-001). How can I assist your investigation?',
       timestamp: 'Today, 10:45 AM',
       suggestedPrompts: [
         'Find tower co-location pings near Sector 43 ISBT',
