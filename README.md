@@ -47,32 +47,82 @@
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Windows & Kali Linux)
 
 ### 1. Prerequisites
-Ensure you have **Node.js** (v18 or higher) and **npm** installed.
+- **Node.js**: v18 or v20+ LTS
+- **npm**: v9+
 
-### 2. Installation
-Clone the repository and install dependencies:
+---
 
+### 🪟 Windows Instructions
+
+#### Option A: One-Click Runner
+Simply double-click or run `start-windows.bat`:
+```cmd
+.\start-windows.bat
+```
+
+#### Option B: Using Command Prompt (CMD)
+```cmd
+git clone https://github.com/Priyanka-IT-cit/Tracex.git
+cd Tracex
+npm install
+npm run dev
+```
+
+#### ⚠️ Common Windows Issue & Fix:
+If PowerShell says *"running scripts is disabled on this system"* (`npm.ps1 cannot be loaded`), run this once in PowerShell:
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+```
+*(Or run `npm.cmd run dev` or use CMD instead of PowerShell)*
+
+---
+
+### 🐧 Kali Linux Instructions
+
+#### Step 1: Install Node.js 20+ (NodeSource)
+If you don't have Node.js 18+ installed on Kali:
+```bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
+```
+
+#### Step 2: Run One-Click Script
+```bash
+chmod +x start-kali.sh
+./start-kali.sh
+```
+
+#### Or Run Manually:
 ```bash
 git clone https://github.com/Priyanka-IT-cit/Tracex.git
 cd Tracex
 npm install
-```
-
-### 3. Start Development Server
-Run the local dev server:
-
-```bash
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+Open **`http://localhost:5173`** (or your Kali IP if running inside a VM/WSL) in your browser.
 
-### 4. Build for Production
-To create an optimized production build:
+---
 
+### 🔄 Moving Project between Windows & Kali Linux
+> **IMPORTANT:** Never copy the `node_modules` folder across different operating systems (Windows and Linux use different native binaries).
+> If you copied the folder directly from Linux to Windows (or vice versa), clean and reinstall:
+> ```bash
+> # Remove existing node_modules & lockfile:
+> # Windows (CMD): rmdir /s /q node_modules & del package-lock.json
+> # Linux / Kali: rm -rf node_modules package-lock.json
+> 
+> # Then reinstall:
+> npm install
+> npm run dev
+> ```
+
+---
+
+### 📦 Build for Production
 ```bash
 npm run build
 ```
